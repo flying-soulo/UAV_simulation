@@ -20,8 +20,8 @@ def run(Tend):
 
     # Initial conditions
     current_state = np.zeros(18)  # Adjust based on actual state size
-    motor_thrust = [0] * 5  # Example for quad motors
-    ctrl_srfc_deflection = [0] * 3  # Example for control surfaces
+    motor_thrust = np.zeros(5)  # Example for quad motors
+    ctrl_srfc_deflection = np.zeros(3)  # Example for control surfaces
 
     #time
     freq = 100  # Hz
@@ -68,9 +68,9 @@ def run(Tend):
         # Run autopilot to update control inputs
         motor_thrust, ctrl_srfc_deflection = autopilot.run(update_step, dt)
 
-        # Apply the low-pass filter to thrust and deflection values
-        motor_thrust = lpf(motor_thrust, simulation_data["Fx"][-len(motor_thrust):], alpha=0.1)
-        ctrl_srfc_deflection = lpf(ctrl_srfc_deflection, simulation_data["Fy"][-len(ctrl_srfc_deflection):], alpha=0.1)
+        # # Apply the low-pass filter to thrust and deflection values
+        # motor_thrust = lpf(motor_thrust, simulation_data["Fx"][-len(motor_thrust):], alpha=0.1)
+        # ctrl_srfc_deflection = lpf(ctrl_srfc_deflection, simulation_data["Fy"][-len(ctrl_srfc_deflection):], alpha=0.1)
 
         # Wrap the filtered values within their respective bounds
         motor_thrust = [wrap(value, min_thrust, max_thrust) for value in motor_thrust]

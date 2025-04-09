@@ -135,7 +135,7 @@ class MasterController:
     def elevator_controller(self, target_altitude, current_altitude, current_pitch, current_pitch_rate, dt):
         pitch_command = self.fw_altitude.run_pid(target_altitude, current_altitude, dt)
         pitch_command = -pitch_command # due to alttiude up negative
-        pitch_rate_command = self.fw_pitch.run_pid(pitch_command, current_pitch, dt)-
+        pitch_rate_command = self.fw_pitch.run_pid(pitch_command, current_pitch, dt)
         
         elevator_deflection = self.fw_pitch_rate.run_pid(pitch_rate_command, current_pitch_rate, dt)
         elevator_deflection = -elevator_deflection # elevator down is positive
