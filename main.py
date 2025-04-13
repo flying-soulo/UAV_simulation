@@ -29,13 +29,13 @@ def run(Tend):
     t = np.arange(Tend/dt) # Example simulation time steps
 
     #for initial conditions
-    current_state[3] = -5000 #m in altitude
-    current_state[4] = 35 #m/s airpseed
+    current_state[2] = -5000 #m in altitude
+    current_state[3] = 30 #m/s airpseed
     update_step = np.zeros(18)
 
     #boundary conditions for propulsion and control surfaces
-    min_thrust, max_thrust = 0, 5000  # Adjust based on engine limits
-    min_deflection, max_deflection = -30, 30  # Degrees for control surfaces
+    min_thrust, max_thrust = 0, 200  # Adjust based on engine limits
+    min_deflection, max_deflection = np.radians(-20), np.radians(20)  # Degrees for control surfaces
 
 
     # Dictionary to store simulation results with variable names as keys
@@ -92,12 +92,12 @@ def run(Tend):
         for idx, key in enumerate(["Fx", "Fy", "Fz", "l", "m", "n"]):
             simulation_data[key].append(forces_moments[idx])
         
-        df = pd.DataFrame(simulation_data)
-        df.to_csv("simulation.csv", index=False)
+    df = pd.DataFrame(simulation_data)
+    df.to_csv("simulation.csv", index=False)
 
-        # Maintain real-time pace
-        time.sleep(dt*100)
+    # Maintain real-time pace
+    time.sleep(dt)
 
 
 if __name__ == "__main__":
-    run(100)
+    run(10)

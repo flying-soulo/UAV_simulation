@@ -5,14 +5,15 @@ from plant.dynamics import forces_moments_calc
 def six_DOF_motion(vehicle_prop, current_states, motor_thrust, ctrl_srfc_deflection):
     # Extract state variables using array indexing
     u, v, w = current_states[3:6]
-    p, q, r = current_states[6:9]
+    p, q, r = current_states[9:12]
+    phi, theta, psi = current_states[6:9]
     
     mass = vehicle_prop['m']  #  Mass of the vehicle
 
     # Calculate forces and moments
     Fx, Fy, Fz, l, m, n = forces_moments_calc(vehicle_prop, current_states, motor_thrust, ctrl_srfc_deflection)
     # Fill forces and moments into the structure
-    forces_moments = np.array([Fx, Fy, Fz, l, m, n])
+    forces_moments = np.array([Fx, Fy, Fz, l, m, n])  # Forces and moments in body frame
     
     # Acceleration equations
     u_dot = r * v - q * w + Fx / mass
@@ -32,7 +33,7 @@ def six_DOF_motion(vehicle_prop, current_states, motor_thrust, ctrl_srfc_deflect
     gamma4 = j_xz / gamma
     gamma5 = (j_z - j_x) / j_y
     gamma6 = j_xz / j_y
-    gamma7 = (j_x - j_y) * j_x + j_xz**2
+    gamma7 = ((j_x - j_y) * j_x + j_xz**2)/gamma
     gamma8 = j_x / gamma
 
     # Moment equations

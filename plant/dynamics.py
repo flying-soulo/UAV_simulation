@@ -28,10 +28,10 @@ def forces_moments_calc(vehicle_prop, state, motor_thrust, ctrl_srfc_deflection)
     thrust_FW = motor_thrust[4]  # Throttle control surface
     
     # Thrust values for quad plane in quad copter mode
-    thrust_LF = motor_thrust[0]  # Throttle of Forward right motor for quad plane in quad copter mode
-    thrust_RF = motor_thrust[1]  # Throttle of Forward left motor for quad plane in quad copter mode
-    thrust_RB = motor_thrust[2]  # Throttle of Back right motor for quad plane in quad copter mode
-    thrust_LB = motor_thrust[3]  # Throttle of Back left motor for quad plane in quad copter mode
+    thrust_LF = motor_thrust[0]  # Throttle of motor0 for quad plane in quad copter mode
+    thrust_RF = motor_thrust[1]  # Throttle of motor1 for quad plane in quad copter mode
+    thrust_RB = motor_thrust[2]  # Throttle of motor2 for quad plane in quad copter mode
+    thrust_LB = motor_thrust[3]  # Throttle of motor3 for quad plane in quad copter mode
     
     # vehicle properties
     m = vehicle_prop['m']  # Mass in kg
@@ -180,5 +180,5 @@ def forces_moments_calc(vehicle_prop, state, motor_thrust, ctrl_srfc_deflection)
     m = m_aero + m_thrust
     n = n_aero + n_thrust
 
-    # Return forces and moments
+    # Return forces and moments in body frame
     return Fx, Fy, Fz, l, m, n
