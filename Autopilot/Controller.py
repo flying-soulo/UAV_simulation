@@ -7,30 +7,55 @@ class MasterController:
     """
     def __init__(self):
         # Quadrotor controller
+        # position controller
         self.quad_x_pos = PID_class()
         self.quad_x_vel = PID_class()
         self.quad_y_pos = PID_class()
         self.quad_y_vel = PID_class()
+
+        # attitude controller
         self.quad_phi = PID_class()
         self.quad_phi_rate = PID_class()
         self.quad_theta = PID_class()
         self.quad_theta_rate = PID_class()
         self.quad_psi = PID_class()
         self.quad_psi_rate = PID_class()
+
+        # altitude controller
         self.quad_z_pos = PID_class()
         self.quad_z_vel = PID_class()
         self.quad_z_accel = PID_class()
 
-        # Fixed-wing controller
+        # Fixed-wing controller with tuned PID gains
+
+        # Longitudinal controller
         self.fw_airspeed  = PID_class()
-        self.fw_heading  = PID_class()
+        self.fw_airspeed.update_gains(kp=1.0, ki=0.3, kd=0.0)
+
         self.fw_altitude  = PID_class()
-        self.fw_roll  = PID_class()
+        self.fw_altitude.update_gains(kp=1.2, ki=0.2, kd=0.3)
+
         self.fw_pitch  = PID_class()
-        self.fw_yaw  = PID_class()
-        self.fw_roll_rate  = PID_class()
+        self.fw_pitch.update_gains(kp=1.0, ki=0.0, kd=0.3)
+
         self.fw_pitch_rate = PID_class()
+        self.fw_pitch_rate.update_gains(kp=2.0, ki=0.0, kd=0.05)
+
+        # Lateral controller
+        self.fw_heading  = PID_class()
+        self.fw_heading.update_gains(kp=1.5, ki=0.05, kd=0.0)
+
+        self.fw_roll  = PID_class()
+        self.fw_roll.update_gains(kp=2.0, ki=0.0, kd=0.2)
+
+        self.fw_roll_rate  = PID_class()
+        self.fw_roll_rate.update_gains(kp=3.0, ki=0.0, kd=0.05)
+
+        self.fw_yaw  = PID_class()
+        self.fw_yaw.update_gains(kp=1.0, ki=0.0, kd=0.1)
+
         self.fw_yaw_rate  = PID_class()
+        self.fw_yaw_rate.update_gains(kp=2.0, ki=0.0, kd=0.1)
 
         #outputs
         self.throttle = np.zeros(5)
@@ -142,12 +167,12 @@ class MasterController:
         return elevator_deflection
     
     def aileron_controller(self, target_heading, current_heading, current_roll, current_roll_rate, dt):
-        error = target_heading - current_heading
-        if error > 180:
-            error -= 360
-        elif error < -180:
-            error += 360
-        target_heading = error
+        heading_error = target_heading - current_heading
+        if heading_error > 180:
+            heading_error -= 360
+        elif heading_error < -180:
+            heading_error += 360
+        target_heading = heading_error
         current_heading = 0
         roll_command = self.fw_heading.run_pid(target_heading, current_heading, dt)
         roll_rate_command = self.fw_roll.run_pid(roll_command, current_roll, dt)

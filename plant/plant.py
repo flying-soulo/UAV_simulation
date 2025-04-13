@@ -9,6 +9,14 @@ class Simulation_class:
     
     def simulate_one_step(self, input_state, motor_thrust, ctrl_srfc_deflection, dt):
         self.state = input_state
+        #boundary conditions for propulsion and control surfaces
+        min_thrust, max_thrust = 0, 200  # Adjust based on engine limits
+        min_deflection, max_deflection = np.radians(-20), np.radians(20)  # Degrees for control surfaces
+
+        # Wrap the filtered values within their respective bounds
+        motor_thrust = [wrap(value, min_thrust, max_thrust) for value in motor_thrust]
+        ctrl_srfc_deflection = [wrap(value, min_deflection, max_deflection) for value in ctrl_srfc_deflection]
+
         acc_body, omega_dot, forces_moments = six_DOF_motion(self.vehicle_prop, self.state, motor_thrust, ctrl_srfc_deflection)
         # Update velocity self.states
         self.state[3] += acc_body[0] * dt  # u (velocity in x-direction)
@@ -34,11 +42,5 @@ class Simulation_class:
         self.state[7] = wrap(self.state[7] + self.state[10] * dt, -np.pi/2, np.pi/2)  # theta (pitch angle)
         self.state[8] = wrap(self.state[8] + self.state[11] * dt,  -np.pi, np.pi)  # psi (yaw angle)
 
-        self.state[12] = forces_moments[0]  # Force in x-direction (NED frame)
-        self.state[13] = forces_moments[1]  # Force in y-direction (NED frame)
-        self.state[14] = forces_moments[2]  # Force in z-direction (NED frame)
-        self.state[15] = forces_moments[3]  # Moment about x-axis
-        self.state[16] = forces_moments[4]  # Moment about y-axis
-        self.state[17] = forces_moments[5]  # Moment about z-axis
-        return self.state
+        return self.state, forces_moments
 

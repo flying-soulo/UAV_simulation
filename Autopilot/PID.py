@@ -2,10 +2,10 @@ import numpy as np
 
 class PID_class:
     def __init__(self):
-        # PID gains
-        self.kp = 0.1
-        self.ki = 0.01
-        self.kd = 0.001
+        # PID gains (generic initial values for UAV attitude control)
+        self.kp = 0.5    
+        self.ki = 0.01   
+        self.kd = 0.1     
         
         # Process variables
         self.current = 0.0
@@ -15,21 +15,26 @@ class PID_class:
 
         # Integral accumulator and limits (anti-windup)
         self.integral_sum = 0.0
-        self.higher_integral_limit = np.inf  # You can set specific limits here
-        self.lower_integral_limit = -np.inf
+        self.higher_integral_limit = 10.0
+        self.lower_integral_limit = -10.0
         self.reset_integral = False
-        self.sample_time = 0.01
+        self.sample_time = 0.01  # 100 Hz control loop
 
         # PID term outputs
-        self.P = 0.1    
-        self.I = 0.01
-        self.D = 0.001
+        self.P = 0.0    
+        self.I = 0.0
+        self.D = 0.0
         
         # Output management
-        self.output_limits = (-np.inf, np.inf)
+        self.output_limits = (-1.0, 1.0)  # Normalized control output for mixer or actuator
         self.last_output = 0.0
         self.output = 0.0
         self.last_input = 0.0
+
+    def update_gains(self, kp=None, ki=None, kd=None):
+        self.kp = kp if kp is not None else self.kp
+        self.ki = ki if ki is not None else self.ki
+        self.kd = kd if kd is not None else self.kd
 
     def run_pid(self, target, current, dt):
         self.target = target
