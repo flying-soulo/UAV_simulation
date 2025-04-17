@@ -1,32 +1,34 @@
-# Project Overview
+# 6-DOF UAV Simulation – Quadplane
 
-This project is a 6 DOF simulaton of a QUADPLANE UAV
+This project simulates a UAV’s flight in **6 Degrees of Freedom (6-DOF)** with modular architecture. It focuses on realistic physics, reusability, and future scalability.
 
-## Files and Functionalities
+> Designed for Model-Based Design using **ANSYS SCADE**. Supports multi-UAV platforms.
 
-1. **main.py**  
-    - The entry point of the application.  
-    - Contains the main logic and orchestrates the execution of the program.
+---
 
-2. **utils.py**  
-    - Contains utility functions that are reused across the project.  
-    - Examples include helper functions for data processing or formatting.
+## 🚀 Project Features
 
-3. **config.json**  
-    - Stores configuration settings for the project.  
-    - Includes parameters like API keys, database credentials, or environment-specific settings.
+- Modular structure supporting easy plug-and-play development
+- Rigid-body dynamics with aerodynamic and propulsion modeling
+- Realistic environment and sensor models
+- Custom autopilot and control algorithm integration (PID, waypoint, etc.)
+- Real-time data logging and visualization support
 
-4. **requirements.txt**  
-    - Lists all the dependencies required for the project.  
-    - Use `pip install -r requirements.txt` to install them.
+---
 
-5. **README.md**  
-    - Provides an overview of the project, its purpose, and how to use it.  
-    - Includes instructions for setup and usage.
+## 📁 Repository Structure
 
-6. **tests/**  
-    - Contains unit tests for the project.  
-    - Ensures the correctness of the codebase.
+```plaintext
+.
+├── main.py                # Simulation entry point
+├── utils.py               # Global utilities
+├── config.json            # Configurable system parameters
+├── requirements.txt       # Python dependencies
+├── docs/
+│   └── Simulation_Description.md   # Detailed design, architecture, and goals
+├── tests/                 # Unit and integration tests
+└── README.md              # You are here
+```
 
 ## How to Use
 

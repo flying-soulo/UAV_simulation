@@ -1,5 +1,5 @@
 import numpy as np 
-from utils import get_aerosnode_properties, wrap
+from Global.utils import get_aerosnode_properties, wrap
 
 def trim_longitudinal(cruise_speed, vz):
     vehicle_prop = get_aerosnode_properties()

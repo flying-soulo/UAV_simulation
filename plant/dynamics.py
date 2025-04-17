@@ -1,6 +1,6 @@
 import numpy as np
 
-from utils import wrap, rotation_matrix
+from Global.utils import wrap, rotation_matrix
 
 def forces_moments_calc(vehicle_prop, state, motor_thrust, ctrl_srfc_deflection):
     '''

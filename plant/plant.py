@@ -1,6 +1,6 @@
 import numpy as np
 from plant.kinematics import six_DOF_motion
-from utils import wrap, rotation_matrix
+from Global.utils import wrap, rotation_matrix
 
 class Simulation_class:
     def __init__(self, vehicle_prop):
@@ -10,7 +10,7 @@ class Simulation_class:
     def simulate_one_step(self, input_state, motor_thrust, ctrl_srfc_deflection, dt):
         self.state = input_state
         #boundary conditions for propulsion and control surfaces
-        min_thrust, max_thrust = 0, 200  # Adjust based on engine limits
+        min_thrust, max_thrust = 0, 200  # thrust in N
         min_deflection, max_deflection = np.radians(-20), np.radians(20)  # Degrees for control surfaces
 
         # Wrap the filtered values within their respective bounds
@@ -37,7 +37,8 @@ class Simulation_class:
         self.state[0] += V_ned[0] * dt  # x (position in x-direction)
         self.state[1] += V_ned[1] * dt  # y (position in y-direction)
         self.state[2] += V_ned[2] * dt  # z (position in z-direction)
-
+        
+        # update angles states using angular velocity states
         self.state[6] = wrap(self.state[6] + self.state[9] * dt, -np.pi/2, np.pi/2)  # phi (roll angle)
         self.state[7] = wrap(self.state[7] + self.state[10] * dt, -np.pi/2, np.pi/2)  # theta (pitch angle)
         self.state[8] = wrap(self.state[8] + self.state[11] * dt,  -np.pi, np.pi)  # psi (yaw angle)
