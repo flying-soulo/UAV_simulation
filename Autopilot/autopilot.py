@@ -1,5 +1,5 @@
 import numpy as np
-from Autopilot.controller import MasterController
+from Autopilot.Controller import MasterController
 from Autopilot.waypoint import WaypointNavigator
 
 class Autopilot_class:
