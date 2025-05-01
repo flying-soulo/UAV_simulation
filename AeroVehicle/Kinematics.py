@@ -12,9 +12,7 @@ def six_DOF_motion(vehicle_prop, current_states, motor_thrust, ctrl_srfc_deflect
     mass = vehicle_prop["m"]  #  Mass of the vehicle
 
     # Calculate forces and moments
-    Fx, Fy, Fz, l, m, n = forces_moments_calc(
-        vehicle_prop, current_states, motor_thrust, ctrl_srfc_deflection
-    )
+    Fx, Fy, Fz, l, m, n = forces_moments_calc(vehicle_prop, current_states, motor_thrust, ctrl_srfc_deflection)
     # Fill forces and moments into the structure
     forces_moments = np.array([Fx, Fy, Fz, l, m, n])  # Forces and moments in body frame
 

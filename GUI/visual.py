@@ -4,7 +4,7 @@ UAV 6DOF Visualizer using VPython
 This script creates a 3D visualization of a UAV states from NED states converting to Vptyhon frame.
 """
 
-from vpython import canvas, distant_light, rate, slider, vector, color, wtext
+from vpython import *
 import numpy as np
 import time
 from GUI.data_transform import ned_to_eus
@@ -41,19 +41,42 @@ class UAVVisualizer:
         distant_light(direction=vector(0.5, 0.5, -0.5), color=color.white)
         distant_light(direction=vector(-0.5, -0.5, 0.5), color=color.white)
 
+        # self.telemetry_scene = canvas(
+        #     title="Telemetry",
+        #     width=400,
+        #     height=300,
+        #     background=color.white,
+        # )
+        # self.telemetry_scene.select()
+        # self.telemetry_text = wtext(text="Waiting for data...\n")
+
+        # Setup the canvas
         self.telemetry_scene = canvas(
             title="Telemetry",
             width=400,
             height=300,
             background=color.white,
         )
-        self.telemetry_scene.select()
-        self.telemetry_text = wtext(text="Waiting for data...\n")
+
+        # Create the label inside the canvas
+        self.telemetry_label = label(
+            pos=vector(0, 0, 0),  # adjust based on where you want it in the scene
+            text="Waiting for data...\n",
+            xoffset=0, yoffset=0,  # screen-space offset
+            space=30,
+            height=12,
+            border=4,
+            font='monospace',
+            box=False,             # remove box if you want just text
+            line=False             # remove line connecting to pos
+        )
 
         self.scene.select()
         self.env = Environment(self.scene)
         self.env.build()
         self.uav = Aircraft()
+        self.trail = curve(color=color.red, radius=0.2)
+
 
         self.cam_distance = 50.0
         self.cam_height = 25.0
@@ -106,6 +129,24 @@ class UAVVisualizer:
         states = [n, e, d, 0, 0, 0, np.deg2rad(r), np.deg2rad(p), np.deg2rad(y), 0, 0, 0]
         self.telemetry(states)
 
+    # def update_from_states(self, states):
+    #     self.states = states
+    #     pos_ned = states[0:3]
+    #     orient_ned_rad = states[6:9]
+    #     orient_ned_deg = np.degrees(orient_ned_rad)
+
+    #     pos_eus, rot_eus = ned_to_eus(pos_ned, orient_ned_deg)
+    #     self.uav.set_pose(pos_eus, rot_eus)
+
+    #     cam_offset = vector(0, self.cam_height, self.cam_distance)
+    #     cam_pos = vector(*pos_eus) + cam_offset
+
+    #     self.scene.camera.pos = cam_pos
+    #     self.scene.camera.axis = vector(*pos_eus) - cam_pos
+    #     self.scene.camera.up = vector(0, 1, 0)
+
+    #     self.telemetry(self.states)
+
     def update_from_states(self, states):
         self.states = states
         pos_ned = states[0:3]
@@ -115,6 +156,9 @@ class UAVVisualizer:
         pos_eus, rot_eus = ned_to_eus(pos_ned, orient_ned_deg)
         self.uav.set_pose(pos_eus, rot_eus)
 
+        # Update trail
+        self.trail.append(pos=vector(*pos_eus))
+
         cam_offset = vector(0, self.cam_height, self.cam_distance)
         cam_pos = vector(*pos_eus) + cam_offset
 
@@ -123,6 +167,7 @@ class UAVVisualizer:
         self.scene.camera.up = vector(0, 1, 0)
 
         self.telemetry(self.states)
+
 
     def telemetry(self, states):
         pos_ned = states[0:3]
@@ -134,23 +179,22 @@ class UAVVisualizer:
         rates_dps = np.rad2deg(rates_rad)
 
         text = (
-            "<b>=== UAV Telemetry ===</b><br>"
-            f"North (m): {pos_ned[0]:.1f}<br>"
-            f"East  (m): {pos_ned[1]:.1f}<br>"
-            f"Down  (m): {pos_ned[2]:.1f}<br>"
-            f"U (m/s): {vel_body[0]:.2f}<br>"
-            f"V (m/s): {vel_body[1]:.2f}<br>"
-            f"W (m/s): {vel_body[2]:.2f}<br>"
-            f"Roll  (°): {angles_deg[0]:.2f}<br>"
-            f"Pitch (°): {angles_deg[1]:.2f}<br>"
-            f"Yaw   (°): {angles_deg[2]:.2f}<br>"
-            f"P (deg/s): {rates_dps[0]:.2f}<br>"
-            f"Q (deg/s): {rates_dps[1]:.2f}<br>"
-            f"R (deg/s): {rates_dps[2]:.2f}<br>"
+            "=== UAV Telemetry ===\n"
+            f"North (m): {pos_ned[0]:.1f}\n"
+            f"East  (m): {pos_ned[1]:.1f}\n"
+            f"Down  (m): {pos_ned[2]:.1f}\n"
+            f"U (m/s): {vel_body[0]:.2f}\n"
+            f"V (m/s): {vel_body[1]:.2f}\n"
+            f"W (m/s): {vel_body[2]:.2f}\n"
+            f"Roll  (°): {angles_deg[0]:.2f}\n"
+            f"Pitch (°): {angles_deg[1]:.2f}\n"
+            f"Yaw   (°): {angles_deg[2]:.2f}\n"
+            f"P (deg/s): {rates_dps[0]:.2f}\n"
+            f"Q (deg/s): {rates_dps[1]:.2f}\n"
+            f"R (deg/s): {rates_dps[2]:.2f}\n"
         )
-        self.telemetry_scene.select()
-        self.telemetry_text.text = text
-        self.scene.select()
+        self.telemetry_label.text = text
+
 
 # ---- Entry point ----
 if __name__ == "__main__":

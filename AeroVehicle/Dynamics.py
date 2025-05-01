@@ -122,16 +122,12 @@ def forces_moments_calc(vehicle_prop, state, motor_thrust, ctrl_srfc_deflection)
     # Total aerodynamic forces in body frame
     lift = q_dyn * S * CL  # Lift force
     drag = q_dyn * S * CD  # Drag force
-    F_aero_body = R_stb_to_body @ np.array(
-        [-drag, 0, -lift]
-    )  # Correct matrix multiplication
+    F_aero_body = R_stb_to_body @ np.array([-drag, 0, -lift])  # Correct matrix multiplication
     side_force = q_dyn * S * CY  # Side force with safeguard
     F_aero_body[1] += side_force  # Add side force to the y-component
 
     # Thrust forces in body frame
-    thrust_body = np.array(
-        [thrust_FW, 0, -thrust_RB - thrust_LB - thrust_RF - thrust_LF]
-    )
+    thrust_body = np.array([thrust_FW, 0, -thrust_RB - thrust_LB - thrust_RF - thrust_LF])
 
     # Total forces in body frame
     Fx, Fy, Fz = F_aero_body + gravity_body + thrust_body
@@ -172,9 +168,9 @@ def forces_moments_calc(vehicle_prop, state, motor_thrust, ctrl_srfc_deflection)
     n_thrust = c_tau * (thrust_LB + thrust_RF - thrust_LF - thrust_RB)  # Yaw moment
 
     # Total moments in body frame
-    l = l_aero + l_thrust
-    m = m_aero + m_thrust
-    n = n_aero + n_thrust
+    l = l_aero #+ l_thrust
+    m = m_aero #+ m_thrust
+    n = n_aero #+ n_thrust
 
     # Return forces and moments in body frame
     return Fx, Fy, Fz, l, m, n

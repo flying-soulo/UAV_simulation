@@ -1,49 +1,90 @@
 # 6-DOF UAV Simulation – Quadplane
 
-This project simulates a UAV’s flight in **6 Degrees of Freedom (6-DOF)** with modular architecture. It focuses on realistic physics, reusability, and future scalability.
+**Author:** Abhishek P M
+**Date:** March 27, 2025
 
-> Designed for Model-Based Design using **ANSYS SCADE**. Supports multi-UAV platforms.
+---
+
+## 🎯 Objectives
+
+- Simulate UAV flight in **6 Degrees of Freedom (6-DOF)**
+- Follow a **modular architecture** for flexibility and scalability
+- Support **multiple UAV configurations** and future upgrades
+- Implement **realistic physics modeling**, including aerodynamics and propulsion
+- Enable **plug-and-play** integration of controller algorithms (e.g., PID, waypoint navigation)
+- Provide **sensor and environmental models**
+- Support **real-time data logging** for analysis and visualization
+
+---
+
+## 🧭 Purpose
+
+This project provides a structured, high-fidelity simulation platform for UAV system development and testing. It allows verification of flight dynamics, control strategies, and sensor interactions in software—eliminating early dependency on hardware prototypes.
+
+---
+
+## ⚙️ Assumptions
+
+- UAV is modeled as a **rigid body**
+- Simulation follows **model-based design principles**
+- Does not rely on any specific proprietary toolchain
+
+> Originally designed with **ANSYS SCADE** compatibility in mind. Can be extended to support multi-UAV platforms.
+
+---
+
+## 🏗️ System Architecture
+
+The system adopts a **modular and decoupled architecture**. Each module is independently upgradable and interacts with others using a **standardized data structure**. This ensures clean separation of concerns and promotes maintainability.
+
+---
+
+## 🧩 Module Overview
+
+### 1. **Simulation Module**
+- `plant`: Simulated UAV physical model
+- `kinematics`: Updates position, velocity, and orientation
+- `dynamics`: Applies Newton-Euler equations using force/torque inputs
+
+### 2. **Autopilot Module**
+- `autopilot`: High-level mission logic
+- `waypoint`: Navigation and path planning
+- `controller`: Abstract control interface
+- `PID`: Classical control implementation with tunable parameters
+
+### 3. **Data Logging Module**
+- `simulation_log`: Time-series data storage
+- `simulation_plot`: Post-run plotting and visualization
+
+### 4. **Visualization Module**
+- `virtual`: 2D/3D visual interface
+- `models`: Geometric representations of UAVs
+
+### 5. **Math Module**
+- `utils`: Shared utility functions (I/O, transformations, etc.)
+
+---
+
+## 🔄 Integration Method
+
+A central **Simulation and Integration Layer** synchronizes all modules through a **uniform struct-based data exchange format**.
+
+Benefits:
+- Easy replacement or upgrade of components
+- Clean and testable architecture
+- Promotes rapid prototyping and debugging
 
 ---
 
 ## 🚀 Project Features
 
-- Modular structure supporting easy plug-and-play development
-- Rigid-body dynamics with aerodynamic and propulsion modeling
-- Realistic environment and sensor models
-- Custom autopilot and control algorithm integration (PID, waypoint, etc.)
-- Real-time data logging and visualization support
+- Fully modular, extensible framework
+- Rigid-body dynamics with realistic force modeling
+- Sensor and environment simulation
+- Customizable control logic (PID, waypoint-following, etc.)
+- Real-time logging and 3D visualization support
 
 ---
 
 ## 📁 Repository Structure
 
-```plaintext
-.
-├── main.py                # Simulation entry point
-├── utils.py               # Global utilities
-├── config.json            # Configurable system parameters
-├── requirements.txt       # Python dependencies
-├── docs/
-│   └── Simulation_Description.md   # Detailed design, architecture, and goals
-├── tests/                 # Unit and integration tests
-└── README.md              # You are here
-```
-
-## How to Use
-
-1. Clone the repository:
-    ```
-    git clone <repository-url>
-    cd <repository-folder>
-    ```
-
-2. Install dependencies:
-    ```
-    pip install -r requirements.txt
-    ```
-
-3. Run the application:
-    ```
-    python main.py
-    ```

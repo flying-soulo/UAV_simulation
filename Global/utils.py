@@ -19,6 +19,31 @@ def wrap(value, min_val, max_val):
     range_size = max_val - min_val
     return (value - min_val) % range_size + min_val
 
+#----------------Linear Scaling------------------
+def linear_scale(x, in_min, in_max, out_min, out_max):
+    """
+    Linearly scale x from range [in_min, in_max] to [out_min, out_max].
+
+    Parameters:
+        x (float): Input value.
+        in_min (float): Minimum of input range.
+        in_max (float): Maximum of input range.
+        out_min (float): Minimum of output range.
+        out_max (float): Maximum of output range.
+
+    Returns:
+        float: Scaled output value.
+    """
+    if in_min == in_max:
+        raise ValueError("Input range cannot be zero (in_min == in_max)")
+
+    # Clamp input to avoid extrapolation if needed
+    x = np.clip(x, in_min, in_max)
+
+    # Linear scaling formula
+    scaled = (x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
+    return scaled
+
 
 # ---------- Rotation Matrix ----------
 def rotation_matrix(phi, theta, psi):
