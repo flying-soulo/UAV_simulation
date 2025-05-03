@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UAV Simulation Dashboard</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</head>
+<body>
+    <h1>UAV Simulation Telemetry</h1>
+    <div>
+        <button onclick="startSim()">Start Simulation</button>
+    </div>
+    <div id="telemetry">
+        <p>Time: <span id="time">--</span></p>
+        <p>Position: (<span id="x">--</span>, <span id="y">--</span>, <span id="z">--</span>)</p>
+        <p>Velocity: u=<span id="u">--</span> v=<span id="v">--</span> w=<span id="w">--</span></p>
+        <p>Attitude: φ=<span id="phi">--</span>° θ=<span id="theta">--</span>° ψ=<span id="psi">--</span>°</p>
+    </div>
+</body>
+</html>

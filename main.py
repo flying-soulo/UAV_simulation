@@ -89,7 +89,7 @@ def run(Tend):
 
     # Save to CSV
     df = pd.DataFrame(simulation_data)
-    df.to_csv("sim_log/simulation.csv", index=False)
+    df.to_csv("logger/simulation.csv", index=False)
     # plot(df)  # Uncomment if plotting is implemented
 
 
