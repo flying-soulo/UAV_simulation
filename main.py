@@ -1,97 +1,128 @@
 import time
 import numpy as np
+import threading
 import pandas as pd
+from flask import Flask, render_template
+from flask_socketio import SocketIO, emit
 from Autonomy.Autopilot import Autopilot_class
-from GUI.visual import UAVVisualizer
 from AeroVehicle.Vehicle_Sim import Aero_Vehicle_sim
 from AeroVehicle.Vehicle_Properties import Aerosonde_vehicle
 
+app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-def run(Tend):
-    # Time setup
-    freq = 100  # Hz
-    dt = 1 / freq
-    t_steps = int(Tend * freq)
+# Globals
+sim_thread = None
+latest_state = {}
+sim_log = []
 
-    # Waypoints: (x, y, z, speed, mode)
-    waypoints = (
-        [+5000, +5000, -1000, 30, "reach"],
-        [+5000, -5000, -1000, 30, "reach"],
-        [-5000, -5000, -1000, 30, "reach"],
-        [-5000, +5000, -1000, 35, "reach"],
-        [+5000, +5000, -1000, 35, "reach"],
-    )
+# Config
+freq = 100
+dt = 1 / freq
 
-    # Vehicle properties and modules
-    vehicle_prop = Aerosonde_vehicle.copy()
-    simulation = Aero_Vehicle_sim(vehicle_prop, dt)
-    autopilot = Autopilot_class(waypoints, dt)
-    visualizer = UAVVisualizer()
-    # visualizer.run()  # Uncomment if needed
+# Setup
+waypoints = [
+    [+5000, +5000, -1000, 30, "reach"],
+    [+5000, -5000, -1000, 30, "reach"],
+    [-5000, -5000, -1000, 30, "reach"],
+    [-5000, +5000, -1000, 35, "reach"],
+    [+5000, +5000, -1000, 35, "reach"],
+]
 
-    # Initial state: [x, y, z, u, v, w, phi, theta, psi, p, q, r]
-    current_state = np.zeros(12)
-    current_state[2] = -1000  # Initial altitude (z)
-    current_state[3] = 23     # Initial airspeed (u)
-    update_step = np.zeros(12)
+vehicle_prop = Aerosonde_vehicle.copy()
+simulation = Aero_Vehicle_sim(vehicle_prop, dt)
+autopilot = Autopilot_class(waypoints, dt)
 
-    # Initial actuator states
-    motor_thrust = np.zeros(5)
-    ctrl_srfc_deflection = np.zeros(3)
+# Initial state
+current_state = np.zeros(12)
+current_state[2] = -1000
+current_state[3] = 23
 
-    # Constraints
+
+def run_step(state):
     thrust_max = 110 * 0.3
     thrust_min = 0
     deflection_max = np.deg2rad(30)
     deflection_min = np.deg2rad(-30)
 
-    # Preallocate log dictionary
-    keys_state = ["x", "y", "z", "u", "v", "w", "phi", "theta", "psi", "p", "q", "r"]
-    keys_force_moment = ["Fx", "Fy", "Fz", "l", "m", "n"]
-    keys_motors = ["motor0", "motor1", "motor2", "motor3", "motor4"]
-    keys_ctrl_surfaces = ["aileron", "elevator", "rudder"]
+    motor_thrust, ctrl_srfc_deflection = autopilot.run(state)
+    motor_thrust = np.clip(motor_thrust, thrust_min, thrust_max)
+    ctrl_srfc_deflection = np.clip(ctrl_srfc_deflection, deflection_min, deflection_max)
 
-    simulation_data = {key: [] for key in ["time"] + keys_state + keys_force_moment + keys_motors + keys_ctrl_surfaces}
+    return simulation.simulate_one_step(state, motor_thrust, ctrl_srfc_deflection)
 
-    for i in range(t_steps):
-        # Autopilot computes actuator commands
-        motor_thrust, ctrl_srfc_deflection = autopilot.run(update_step)
 
-        # Enforce actuator limits
-        motor_thrust = np.clip(motor_thrust, thrust_min, thrust_max)
-        ctrl_srfc_deflection = np.clip(ctrl_srfc_deflection, deflection_min, deflection_max)
+def record_log(t, state):
+    sim_log.append({
+        'time': round(t, 2),
+        'x': round(state[0], 2),
+        'y': round(state[1], 2),
+        'z': round(state[2], 2),
+        'u': round(state[3], 2),
+        'v': round(state[4], 2),
+        'w': round(state[5], 2),
+        'phi': round(np.rad2deg(state[6]), 2),
+        'theta': round(np.rad2deg(state[7]), 2),
+        'psi': round(np.rad2deg(state[8]), 2),
+    })
 
-        # Simulate one step
-        update_step, forces_moments = simulation.simulate_one_step(current_state, motor_thrust, ctrl_srfc_deflection)
 
-        visualizer.update_from_states(update_step)  # Uncomment if visualization is needed
+def update_visuals(state):
+    global latest_state
+    latest_state = {
+        'x': round(state[0], 2),
+        'y': round(state[1], 2),
+        'z': round(state[2], 2),
+        'phi': round(np.rad2deg(state[6]), 2),
+        'theta': round(np.rad2deg(state[7]), 2),
+        'psi': round(np.rad2deg(state[8]), 2),
+    }
+    socketio.emit('telemetry', latest_state)
 
-        # Log data
-        simulation_data["time"].append(i * dt)
 
-        for idx, key in enumerate(keys_state):
-            simulation_data[key].append(current_state[idx])
+def simulation_loop():
+    global current_state
+    t = 0.0
 
-        for idx, key in enumerate(keys_force_moment):
-            simulation_data[key].append(forces_moments[idx])
+    try:
+        while True:
+            start_time = time.time()
 
-        for idx, key in enumerate(keys_motors):
-            simulation_data[key].append(motor_thrust[idx])
+            current_state, _ = run_step(current_state)
+            record_log(t, current_state)
+            update_visuals(current_state)
 
-        for idx, key in enumerate(keys_ctrl_surfaces):
-            simulation_data[key].append(ctrl_srfc_deflection[idx])
+            t += dt
+            elapsed = time.time() - start_time
+            sleep_time = dt - elapsed
+            if sleep_time > 0:
+                time.sleep(sleep_time)
+    except KeyboardInterrupt:
+        print("Simulation interrupted. Saving log.")
+    finally:
+        df = pd.DataFrame(sim_log)
+        df.to_csv("simulation_log.csv", index=False)
+        print("Simulation log saved to simulation_log.csv")
 
-        # Update current state
-        current_state = update_step
 
-        # Real-time pacing
-        time.sleep(dt)
+@app.route("/")
+def index():
+    return render_template("viewer.html")
 
-    # Save to CSV
-    df = pd.DataFrame(simulation_data)
-    df.to_csv("logger/simulation.csv", index=False)
-    # plot(df)  # Uncomment if plotting is implemented
+
+@socketio.on('connect')
+def handle_connect():
+    print("Client connected.")
+
+
+@app.route("/start")
+def start_sim():
+    global sim_thread
+    if sim_thread is None or not sim_thread.is_alive():
+        sim_thread = threading.Thread(target=simulation_loop)
+        sim_thread.start()
+    return "Simulation started."
 
 
 if __name__ == "__main__":
-    run(Tend=10000)
+    socketio.run(app, debug=True)

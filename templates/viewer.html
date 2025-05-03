@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>UAV WebGL Viewer</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+  <script>
+    const socket = io();
+
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xbfd1e5);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+    camera.position.set(0, 100, 300);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Ground plane
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(10000, 10000),
+      new THREE.MeshPhongMaterial({ color: 0x88aa88, side: THREE.DoubleSide })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    // Lighting
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(300, 500, 300);
+    scene.add(light);
+
+    // UAV Model (box with wings)
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(10, 3, 3),
+      new THREE.MeshStandardMaterial({ color: 0x3333ff })
+    );
+    const leftWing = new THREE.Mesh(
+      new THREE.BoxGeometry(2, 0.2, 12),
+      new THREE.MeshStandardMaterial({ color: 0x555555 })
+    );
+    leftWing.position.set(-6, 0, 0);
+
+    const rightWing = leftWing.clone();
+    rightWing.position.set(6, 0, 0);
+
+    const uav = new THREE.Group();
+    uav.add(body);
+    uav.add(leftWing);
+    uav.add(rightWing);
+    scene.add(uav);
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Animate
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // SocketIO listener for telemetry
+    socket.on("telemetry", function(data) {
+      const x = data.x || 0;
+      const y = data.y || 0;
+      const z = data.z || 0;
+      const phi = data.phi || 0;     // roll in degrees
+      const theta = data.theta || 0; // pitch
+      const psi = data.psi || 0;     // yaw
+
+      // Position UAV
+      uav.position.set(x, -z, y);  // NED to ENU with y flip
+
+      // Orientation UAV
+      const deg2rad = Math.PI / 180;
+      uav.rotation.set(theta * deg2rad, -psi * deg2rad, phi * deg2rad, 'ZYX');
+    });
+  </script>
+</body>
+</html>
