@@ -4,27 +4,30 @@ from AeroVehicle.Kinematics import six_DOF_motion
 from Global.Utils import wrap, rotation_matrix, linear_scale
 
 
-class Aero_Vehicle_sim:
+class UAVSimulation:
     def __init__(self, vehicle_prop, dt):
         self.vehicle_prop = vehicle_prop
         self.dt = dt
         self.state = np.zeros(12)  # [x, y, z, u, v, w, phi, theta, psi, p, q, r]
+        self.min_thrust, self.max_thrust = 0, 110  # Thrust limits
+        self.min_deflection, self.max_deflection = np.deg2rad(-30), np.deg2rad(30)  # Deflection limits
 
-    def simulate_one_step(self, input_state, motor_thrust, ctrl_srfc_deflection):
+    def simulate_one_step(self, input_state, control_input):
+        # Unpack control inputs
+        motor_thrust, ctrl_srfc_deflection = control_input[0:4], control_input[4:7]
+
+        # Unpack state
         self.state[:] = input_state  # shallow copy for safety
-        min_thrust, max_thrust = 0, 110 * 0.3  # Thrust limits
-        min_deflection, max_deflection = np.deg2rad(-30), np.deg2rad(30)  # Deflection limits
-
-        for i in range(len(motor_thrust)):
-            motor_thrust[i] = linear_scale(motor_thrust[i], in_min=1100, in_max=2000, out_min=min_thrust, out_max=max_thrust)
-
-        for i in range(len(ctrl_srfc_deflection)):
-            ctrl_srfc_deflection = linear_scale(ctrl_srfc_deflection, in_min=1100, in_max=2000, out_min=min_deflection, out_max=max_deflection)
-
         # Unpack state components
         u, v, w = self.state[3:6]
         phi, theta, psi = self.state[6:9]
         p, q, r = self.state[9:12]
+
+        for i in range(len(motor_thrust)):
+            motor_thrust[i] = linear_scale(motor_thrust[i], in_min=1100, in_max=2000, out_min=self.min_thrust, out_max=self.max_thrust)
+
+        for i in range(len(ctrl_srfc_deflection)):
+            ctrl_srfc_deflection = linear_scale(ctrl_srfc_deflection, in_min=1100, in_max=2000, out_min=self.min_deflection, out_max=self.max_deflection)
 
         # Dynamics
         acc_body, omega_dot, forces_moments = six_DOF_motion(self.vehicle_prop, self.state, motor_thrust, ctrl_srfc_deflection)
