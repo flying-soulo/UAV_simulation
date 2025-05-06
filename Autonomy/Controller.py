@@ -25,6 +25,5 @@ class ControllerManager:
 
         elif mode == "QUAD":
             return self.quad.run(current_state, nav_state)
-
         else:
             raise ValueError(f"Unsupported mode: {mode}")

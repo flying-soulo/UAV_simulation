@@ -1,13 +1,8 @@
-"""
-renderer.py
-Handles 3D visualization of UAV and telemetry display.
-"""
-
 from vpython import *
 import numpy as np
-from data_transform import ned_to_eus
-from environment import Environment
-from aircraft import Aircraft
+from GUI.data_transform import ned_to_eus
+from GUI.environment import Environment
+from GUI.aircraft import Aircraft
 
 def make_sliders(scene, callback):
     labels = [
@@ -27,14 +22,13 @@ def make_sliders(scene, callback):
     return sliders
 
 class UAVRenderer:
-    def __init__(self, manual_control=False):
-        self.scene = canvas(
-            title="UAV 6DOF View (EUS)",
-            width=1200,
-            height=800,
-            background=vector(0.53, 0.81, 0.92),
-            autoscale=False,
-        )
+    def __init__(self, scene, manual_control=False):
+        self.scene = scene
+        self.scene.select()
+
+        self.scene.title = "UAV 6DOF View (EUS)"
+        self.scene.background = vector(0.53, 0.81, 0.92)
+        self.scene.autoscale = False
         self.scene.lights = []
         distant_light(direction=vector(0.5, 0.5, -0.5), color=color.white)
         distant_light(direction=vector(-0.5, -0.5, 0.5), color=color.white)
@@ -59,8 +53,6 @@ class UAVRenderer:
         else:
             self.sliders = None
 
-        return self
-
     def on_key_down(self, evt):
         key = evt.key
         if key == "-":
@@ -70,7 +62,7 @@ class UAVRenderer:
             self.cam_distance = min(200.0, self.cam_distance + self.zoom_sensitivity)
             self.cam_height = min(100.0, self.cam_height + 0.5 * self.zoom_sensitivity)
 
-    def update(self, state):
+    def update_from_state(self, state):
         pos_ned = state[0:3]
         vel_body = state[3:6]
         orient_ned_rad = state[6:9]
@@ -100,17 +92,17 @@ class UAVRenderer:
 
         text = (
             "=== UAV Telemetry ===\n"
-            f"North (m): {pos_ned[0]:.1f}\n"
-            f"East  (m): {pos_ned[1]:.1f}\n"
-            f"Down  (m): {pos_ned[2]:.1f}\n"
-            f"U (m/s): {vel_body[0]:.2f}\n"
-            f"V (m/s): {vel_body[1]:.2f}\n"
+            f"North (m): {pos_ned[0]:.1f} | "
+            f"East  (m): {pos_ned[1]:.1f} | "
+            f"Down  (m): {pos_ned[2]:.1f} \n"
+            f"U (m/s): {vel_body[0]:.2f} | "
+            f"V (m/s): {vel_body[1]:.2f} | "
             f"W (m/s): {vel_body[2]:.2f}\n"
-            f"Roll  (°): {angles_deg[0]:.2f}\n"
-            f"Pitch (°): {angles_deg[1]:.2f}\n"
+            f"Roll  (°): {angles_deg[0]:.2f} | "
+            f"Pitch (°): {angles_deg[1]:.2f} | "
             f"Yaw   (°): {angles_deg[2]:.2f}\n"
-            f"P (deg/s): {rates_dps[0]:.2f}\n"
-            f"Q (deg/s): {rates_dps[1]:.2f}\n"
+            f"P (deg/s): {rates_dps[0]:.2f} | "
+            f"Q (deg/s): {rates_dps[1]:.2f} | "
             f"R (deg/s): {rates_dps[2]:.2f}\n"
         )
         self.telemetry_label.text = text
@@ -135,16 +127,9 @@ class UAVRenderer:
         self.scene.camera.pos = cam_pos
         self.scene.camera.axis = vector(*pos_eus) - cam_pos
         self.scene.camera.up = vector(0, 1, 0)
-        # Optional: self.scene.camera.up = vector(*rot_eus.apply([0, 1, 0]))
 
         state = [n, e, d, 0, 0, 0, np.deg2rad(r), np.deg2rad(p), np.deg2rad(y), 0, 0, 0]
         self.show_telemetry(state)
 
     def on_slider(self, _):
         self.update_from_sliders()
-
-if __name__ == "__main__":
-    renderer = UAVRenderer(manual_control=True)
-    while True:
-        rate(10)  # 10 Hz update rate
-

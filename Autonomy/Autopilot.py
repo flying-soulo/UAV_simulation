@@ -29,7 +29,7 @@ class UAVAutopilot:
 
         self.mixer = Mixer()
 
-        self.control_output = [0] * 7
+        self.control_output = [0] * 8
 
     def compute_control(self, state):
         motor_thrust, ctrl_srfc_deflection = self.autopilot.run(state)
@@ -45,13 +45,11 @@ class UAVAutopilot:
 
         nav_output = self.navigator.update(position, velocity)
         if nav_output is None:
-            self.control_output = [0] * 7  # Hold or idle if no nav data
+            self.control_output = [0] * 8  # Hold or idle if no nav data
             return self.control_output
 
         nav_state = {
             "mode": self.mode,
-            "position": position,
-            "velocity": velocity,
             "target_pos": nav_output["target_pos"],  # Needed for QUAD
             "heading": nav_output["target_heading"],  # Needed for FW
             "airspeed": nav_output["target_airspeed"],  # Needed for FW
@@ -59,13 +57,9 @@ class UAVAutopilot:
         }
 
         # compute control commands based on the current state and navigation state using the controller manager
-        mixer_input = self.controller_mgr.run(nav_state)
-
-        # run the mixer to get the final actuator commands
-        if mixer_input is None:
-            self.control_output = self.mixer.run(mode="shutdown")
-        else:
-            self.control_output = self.mixer.run(mixer_input, mode="QuadPlane")
+        input_motor, input_ctrlsrfc = self.controller_mgr.run(current_state, nav_state)
+        mixer_input = input_motor + input_ctrlsrfc
+        self.control_output = self.mixer.run(mode= "QuadPlane", mixerinput=mixer_input)
 
 
         return self.control_output

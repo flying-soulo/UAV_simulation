@@ -14,7 +14,7 @@ class UAVSimulation:
 
     def simulate_one_step(self, input_state, control_input):
         # Unpack control inputs
-        motor_thrust, ctrl_srfc_deflection = control_input[0:4], control_input[4:7]
+        motor_thrust, ctrl_srfc_deflection = control_input[0:5], control_input[5:]
 
         # Unpack state
         self.state[:] = input_state  # shallow copy for safety

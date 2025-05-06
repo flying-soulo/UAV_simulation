@@ -2,111 +2,129 @@ import time
 import numpy as np
 import pandas as pd
 from Autonomy.Autopilot import UAVAutopilot
-from GUI.visual import UAVSystem
 from AeroVehicle.Vehicle_Sim import UAVSimulation
+from GUI.interface import UAVinterface
 from AeroVehicle.Vehicle_Properties import Aerosonde_vehicle
 from vpython import rate
 
-# Time setup
-freq = 100  # Hz
-dt = 1 / freq
 
-# Waypoints: (x, y, z, speed, mode)
-waypoints = (
-    [+5000, +5000, -1000, 30, "reach"],
-    [+5000, -5000, -1000, 30, "reach"],
-    [-5000, -5000, -1000, 30, "reach"],
-    [-5000, +5000, -1000, 35, "reach"],
-    [+5000, +5000, -1000, 35, "reach"],
-)
+class UAVSimulator:
+    def __init__(self):
+        # Simulation parameters
+        self.freq = 100  # Hz
+        self.dt = 1 / self.freq
 
-# Vehicle properties and modules
-vehicle_prop = Aerosonde_vehicle.copy()
-simulation = UAVSimulation(vehicle_prop, dt)
-autopilot = UAVAutopilot(waypoints, dt)
-visualizer = UAVSystem()
-# visualizer.run()  # Uncomment if needed
-
-# Initial state: [x, y, z, u, v, w, phi, theta, psi, p, q, r]
-current_state = np.zeros(12)
-current_state[2] = -1000  # Initial altitude (z)
-current_state[3] = 23  # Initial airspeed (u)
-update_step = np.zeros(12)
-
-# Initial actuator states
-motor_thrust = np.zeros(5)
-ctrl_srfc_deflection = np.zeros(3)
-
-# Constraints
-thrust_max = 110 * 0.3
-thrust_min = 0
-deflection_max = np.deg2rad(30)
-deflection_min = np.deg2rad(-30)
-
-# Preallocate log dictionary
-keys_state = ["x", "y", "z", "u", "v", "w", "phi", "theta", "psi", "p", "q", "r"]
-keys_force_moment = ["Fx", "Fy", "Fz", "l", "m", "n"]
-keys_motors = ["motor0", "motor1", "motor2", "motor3", "motor4"]
-keys_ctrl_surfaces = ["aileron", "elevator", "rudder"]
-
-simulation_data = {
-    key: []
-    for key in ["time"]
-    + keys_state
-    + keys_force_moment
-    + keys_motors
-    + keys_ctrl_surfaces
-}
-
-def run():
-    # Simulation loop
-
-    while runsim is True:
-        # Simulation loop
-        # Autopilot computes actuator commands
-        motor_thrust, ctrl_srfc_deflection = autopilot.run(update_step)
-
-        # Enforce actuator limits
-        motor_thrust = np.clip(motor_thrust, thrust_min, thrust_max)
-        ctrl_srfc_deflection = np.clip(
-            ctrl_srfc_deflection, deflection_min, deflection_max
+        # Waypoints: (x, y, z, speed, mode)
+        self.waypoints = (
+            [+5000, +5000, -1000, 30, "reach"],
+            [+5000, -5000, -1000, 30, "reach"],
+            [-5000, -5000, -1000, 30, "reach"],
         )
 
-        # Simulate one step
-        update_step, forces_moments = simulation.simulate_one_step(
-            current_state, motor_thrust, ctrl_srfc_deflection
-        )
+        # Initialize vehicle, simulation, autopilot, and interface
+        self.vehicle_prop = Aerosonde_vehicle.copy()
+        self.simulation = UAVSimulation(self.vehicle_prop, self.dt)
+        self.autopilot = UAVAutopilot(self.waypoints, self.dt)
+        self.interface = UAVinterface()
 
-        visualizer.run(update_step)
+        # State and control initialization
+        self.current_state = np.zeros(12)
+        self.current_state[2] = -1000  # Initial altitude
+        self.current_state[3] = 30  # Initial airspeed
+        self.update_step = np.zeros(12)
 
-        # Log data
-        simulation_data["time"].append(time.time())
+        self.motor_thrust = np.zeros(5)
+        self.ctrl_srfc_deflection = np.zeros(3)
 
-        for idx, key in enumerate(keys_state):
-            simulation_data[key].append(current_state[idx])
+        # Keys for logging
+        self.keys_state = [
+            "x",
+            "y",
+            "z",
+            "u",
+            "v",
+            "w",
+            "phi",
+            "theta",
+            "psi",
+            "p",
+            "q",
+            "r",
+        ]
+        self.keys_force_moment = ["Fx", "Fy", "Fz", "l", "m", "n"]
+        self.keys_motors = ["motor0", "motor1", "motor2", "motor3", "motor4"]
+        self.keys_ctrl_surfaces = ["aileron", "elevator", "rudder"]
 
-        for idx, key in enumerate(keys_force_moment):
-            simulation_data[key].append(forces_moments[idx])
+        self.simulation_data = {
+            key: []
+            for key in ["time"]
+            + self.keys_state
+            + self.keys_force_moment
+            + self.keys_motors
+            + self.keys_ctrl_surfaces
+        }
 
-        for idx, key in enumerate(keys_motors):
-            simulation_data[key].append(motor_thrust[idx])
+    def run_simulation(self):
+        runsim = False
 
-        for idx, key in enumerate(keys_ctrl_surfaces):
-            simulation_data[key].append(ctrl_srfc_deflection[idx])
+        while True:
+            user_input_data = self.interface.run()
+            command = user_input_data["command"]
+            mode = user_input_data["mode"]
+            waypoint = user_input_data["waypoint"]
+            home = user_input_data["home"]
 
-        # Update current state
-        current_state = update_step
+            match (command):
+                case "start":
+                    runsim = True
 
-        # Real-time pacing
-        time.sleep(dt)
+                case "pause":
+                    runsim = False
 
-    # Save to CSV
-    df = pd.DataFrame(simulation_data)
-    df.to_csv("logger/simulation.csv", index=False)
-    # plot(df)  # Uncomment if plotting is implemented
+                case "stop":
+                    runsim = False
+                    break
+
+            if runsim:
+                # Autopilot computes actuator commands
+                control_input = self.autopilot.run(self.current_state)
+
+                # Simulate one step
+                self.update_step, forces_moments = self.simulation.simulate_one_step(
+                    self.current_state, control_input
+                )
+
+                # Visual update
+                self.interface.update_uav_visual(self.update_step)
+
+                # Log data
+                self.simulation_data["time"].append(time.time())
+
+                for idx, key in enumerate(self.keys_state):
+                    self.simulation_data[key].append(self.current_state[idx])
+
+                for idx, key in enumerate(self.keys_force_moment):
+                    self.simulation_data[key].append(forces_moments[idx])
+
+                for idx, key in enumerate(self.keys_motors):
+                    self.simulation_data[key].append(self.motor_thrust[idx])
+
+                for idx, key in enumerate(self.keys_ctrl_surfaces):
+                    self.simulation_data[key].append(self.ctrl_srfc_deflection[idx])
+                # Step update
+                self.current_state = self.update_step
+            rate(self.freq)
+
+        # Save to CSV
+        df = pd.DataFrame(self.simulation_data)
+        df.to_csv("logger/simulation.csv", index=False)
+
+
+def main():
+    sim = UAVSimulator()
+    sim.run_simulation()
+    # rate(sim.freq)
 
 
 if __name__ == "__main__":
-    while True:
-        run(100)
-        rate(100)
+    main()
