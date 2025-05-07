@@ -2,7 +2,6 @@
 import numpy as np
 from Autonomy.Path_Planning import WaypointNavigator
 from Autonomy.Controller import ControllerManager
-from Global.Utils import linear_scale
 from Autonomy.Mixer import Mixer
 
 
@@ -29,37 +28,39 @@ class UAVAutopilot:
 
         self.mixer = Mixer()
 
-        self.control_output = [0] * 8
+        self.output = [0] * 8
 
-    def compute_control(self, state):
-        motor_thrust, ctrl_srfc_deflection = self.autopilot.run(state)
-        motor_thrust = np.clip(motor_thrust, self.thrust_min, self.thrust_max)
-        ctrl_srfc_deflection = np.clip(
-            ctrl_srfc_deflection, self.deflection_min, self.deflection_max
-        )
-        return motor_thrust, ctrl_srfc_deflection
 
-    def run(self, current_state):
+    def run(self, current_state, GCS_data):
         position = current_state[0:3]
         velocity = current_state[3:6]
 
         nav_output = self.navigator.update(position, velocity)
         if nav_output is None:
-            self.control_output = [0] * 8  # Hold or idle if no nav data
-            return self.control_output
+            self.output = [0] * 8  # Hold or idle if no nav data
+            return self.output
 
         nav_state = {
             "mode": self.mode,
             "target_pos": nav_output["target_pos"],  # Needed for QUAD
             "heading": nav_output["target_heading"],  # Needed for FW
             "airspeed": nav_output["target_airspeed"],  # Needed for FW
-            "wp_type": nav_output.get("type", None),  # Optional
+            "wp_type": nav_output["type"],  # Optional
         }
+        controls = GCS_data["controls"]
 
+        if GCS_data["mode"] == "manual":
+            throttle, aileron, elevator, rudder = controls["throttle"], controls["aileron"], controls["elevator"], controls["rudder"]
+            throttle
+            motor = [0, 0, 0, 0, throttle]
+            ctrl_surface = [aileron, elevator, rudder]
+            self.mixer_input = motor + ctrl_surface
+            self.output = self.mixer.run(mode="manual", mixerinput=self.mixer_input)
+            return self.output
         # compute control commands based on the current state and navigation state using the controller manager
         input_motor, input_ctrlsrfc = self.controller_mgr.run(current_state, nav_state)
         mixer_input = input_motor + input_ctrlsrfc
-        self.control_output = self.mixer.run(mode= "QuadPlane", mixerinput=mixer_input)
+        self.output = self.mixer.run(mode= "Auto", mixerinput=mixer_input)
 
 
-        return self.control_output
+        return self.output

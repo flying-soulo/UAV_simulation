@@ -20,31 +20,31 @@ class FixedWingController:
         }
 
         #aitspeed control
-        self.pids['airspeed'].update_gains(kp=1.0, ki=0.1, kd=0.01)
-        self.pids["airspeed"].set_output_limits(lower=-10.0, upper=10.0)
-        self.pids["airspeed"].set_integral_limits(lower=-0.5, upper=0.5)
+        self.pids['airspeed'].update_gains(kp=10, ki=0.5, kd=0.5)
+        self.pids["airspeed"].set_output_limits(lower=-40.0, upper=40.0)
+        self.pids["airspeed"].set_integral_limits(lower=-4, upper=4)
 
         # altitude control
-        self.pids['altitude'].update_gains(kp=0.3, ki=0, kd=0)
-        self.pids['altitude'].set_output_limits(lower=-10.0, upper=10.0)
+        self.pids['altitude'].update_gains(kp=0.1/(15), ki=0, kd=0)
+        self.pids['altitude'].set_output_limits(lower=(-15), upper=(15))
 
-        self.pids['pitch'].update_gains(kp=1.5, kd=0, ki=0)
-        self.pids['pitch'].set_output_limits(lower=np.deg2rad(-15.0), upper=np.deg2rad(15.0))
+        self.pids['pitch'].update_gains(kp=1, kd=0, ki=0)
+        self.pids['pitch'].set_output_limits(lower=(-15.0), upper=(15.0))
 
         self.pids['pitch_rate'].update_gains(kp=2.0, kd=0.1, ki=0.1)
-        self.pids['pitch_rate'].set_output_limits(lower=np.deg2rad(-30.0), upper=np.deg2rad(30.0))
-        self.pids['pitch_rate'].set_integral_limits(lower=np.deg2rad(-3.0), upper=np.deg2rad(3.0))
+        self.pids['pitch_rate'].set_output_limits(lower=(-30.0), upper=(30.0))
+        self.pids['pitch_rate'].set_integral_limits(lower=(-3.0), upper=(3.0))
 
         # roll control
         self.pids['heading'].update_gains(kp=0.3, kd=0.05, ki=0.0)
-        self.pids['heading'].set_output_limits(lower=np.deg2rad(-30.0), upper=np.deg2rad(30.0))
+        self.pids['heading'].set_output_limits(lower=(-30.0), upper=(30.0))
 
         self.pids['roll'].update_gains(kp=1, kd=0, ki=0.0)
-        self.pids['roll'].set_output_limits(lower=np.deg2rad(-30.0), upper=np.deg2rad(30.0))
+        self.pids['roll'].set_output_limits(lower=(-30.0), upper=(30.0))
 
         self.pids['roll_rate'].update_gains(kp=1, kd=0.05, ki=0.1)
-        self.pids['roll_rate'].set_output_limits(lower=np.deg2rad(-30.0), upper=np.deg2rad(30.0))
-        self.pids['roll_rate'].set_integral_limits(lower=np.deg2rad(-10.0), upper=np.deg2rad(10.0))
+        self.pids['roll_rate'].set_output_limits(lower=(-30.0), upper=(30.0))
+        self.pids['roll_rate'].set_integral_limits(lower=(-10.0), upper=(10.0))
 
     def run(self, current_state, nav_state):
         roll, pitch, yaw = current_state[6:9]
@@ -57,24 +57,21 @@ class FixedWingController:
         target_heading = nav_state["heading"]
 
         # Altitude Control
-        pitch_cmd = -self.pids['altitude'].run_pid(target_alt, altitude, self.dt)
-        pitch_cmd = linear_scale(pitch_cmd, -10, 10, np.deg2rad(-30), np.deg2rad(30))
+        pitch_cmd = self.pids['altitude'].run_pid(target_alt, altitude, self.dt)
         pitch_rate_cmd = self.pids['pitch'].run_pid(pitch_cmd, pitch, self.dt)
         elevator = -self.pids['pitch_rate'].run_pid(pitch_rate_cmd, pitch_rate, self.dt)
 
         # Roll Control
-        heading_error = (target_heading - yaw + 180) % 360 - 180
+        heading_error = np.arctan2(np.sin(target_heading - yaw), np.cos(target_heading - yaw))
         roll_cmd = self.pids['heading'].run_pid(heading_error, 0, self.dt)
         roll_rate_cmd = self.pids['roll'].run_pid(roll_cmd, roll, self.dt)
         aileron = self.pids['roll_rate'].run_pid(roll_rate_cmd, roll_rate, self.dt)
-
 
         # side-slip control
         rudder = -0.7 * aileron
 
         # Airspeed Control
-        throttle = self.pids['airspeed'].run_pid(target_airspeed, airspeed, self.dt)
-
+        throttle = self.pids['airspeed'].run_pid(target_airspeed, airspeed, self.dt) + 60
 
         return {
             "aileron": aileron,

@@ -10,7 +10,6 @@ class ControllerManager:
         self.motor = np.zeros(5)
         self.ctrl_surface = np.zeros(3)
 
-
     def run(self, current_state, nav_state):
         mode = nav_state.get("mode")
         if mode == "FW":

@@ -73,6 +73,7 @@ class UAVSimulator:
             mode = user_input_data["mode"]
             waypoint = user_input_data["waypoint"]
             home = user_input_data["home"]
+            controls = user_input_data["controls"]
 
             match (command):
                 case "start":
@@ -87,12 +88,10 @@ class UAVSimulator:
 
             if runsim:
                 # Autopilot computes actuator commands
-                control_input = self.autopilot.run(self.current_state)
+                control_input = self.autopilot.run(self.current_state, GCS_data=user_input_data)
 
                 # Simulate one step
-                self.update_step, forces_moments = self.simulation.simulate_one_step(
-                    self.current_state, control_input
-                )
+                self.update_step, forces_moments = self.simulation.simulate_one_step(self.current_state, control_input)
 
                 # Visual update
                 self.interface.update_uav_visual(self.update_step)
