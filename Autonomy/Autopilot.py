@@ -3,64 +3,46 @@ import numpy as np
 from Autonomy.Path_Planning import WaypointNavigator
 from Autonomy.Controller import ControllerManager
 from Autonomy.Mixer import Mixer
-
+from Global.simdata import GCSData_class, Actuator_class, UAVState_class, Waypoint_data_class
 
 class UAVAutopilot:
     """
     Main Autopilot class for computing actuator commands based on flight mode, navigation goals, and current state.
     """
 
-    def __init__(self, waypoints, dt):
+    def __init__(self, GCS_data:GCSData_class, dt:float):
         """
         Args:
+
             waypoints (list): List of 3D waypoints.
-            dt (float): Control loop timestep.
+            dt (float): Autopilot loop timestep.
         """
         self.dt = dt
-        self.mode = "FW"  # "FW", "QUAD", or "TRANSITION"
 
-        self.navigator = WaypointNavigator(waypoints)
+        # Navigation manager
+        self.navigator = WaypointNavigator(GCS_data.waypoint_data)
+
+        # controller
         self.controller_mgr = ControllerManager(self.dt)
 
-        # Final actuator outputs
-        self.motor_pwm = np.zeros(5)
-        self.ctrl_surface_pwm = np.zeros(3)
-
+        # mixer
         self.mixer = Mixer()
 
-        self.output = [0] * 8
+        # Mixer output
+        self.controls = Actuator_class(0,0,0,0,0,0,0,0)
 
 
-    def run(self, current_state, GCS_data):
-        position = current_state[0:3]
-        velocity = current_state[3:6]
+    def run(self, current_state: UAVState_class, GCSdata: GCSData_class):
+        """Main funciton which calculated the controls outputs for the autopilot
 
-        nav_output = self.navigator.update(position, velocity)
-        if nav_output is None:
-            self.output = [0] * 8  # Hold or idle if no nav data
-            return self.output
+        Returns:
+            control output: outputs the controls values for the UAV
+        """
 
-        nav_state = {
-            "mode": self.mode,
-            "target_pos": nav_output["target_pos"],  # Needed for QUAD
-            "heading": nav_output["target_heading"],  # Needed for FW
-            "airspeed": nav_output["target_airspeed"],  # Needed for FW
-            "wp_type": nav_output["type"],  # Optional
-        }
-        controls = GCS_data["controls"]
+        nav_target = self.navigator.update(current_state, mode= GCSdata.mode)
 
-        if GCS_data["mode"] == "manual":
-            throttle, aileron, elevator, rudder = controls["throttle"], controls["aileron"], controls["elevator"], controls["rudder"]
-            throttle
-            motor = [0, 0, 0, 0, throttle]
-            ctrl_surface = [aileron, elevator, rudder]
-            self.mixer_input = motor + ctrl_surface
-            self.output = self.mixer.run(mode="manual", mixerinput=self.mixer_input)
-            return self.output
-        # compute control commands based on the current state and navigation state using the controller manager
-        input_motor, input_ctrlsrfc = self.controller_mgr.run(current_state, nav_state)
-        mixer_input = input_motor + input_ctrlsrfc
-        self.output = self.mixer.run(mode= "Auto", mixerinput=mixer_input)
+        mixer_input = self.controller_mgr.run(current_state, nav_target, mode = GCSdata.mode)
 
+        self.output = self.mixer.run(mode= GCSdata.mode, mixerinput= mixer_input)
 
         return self.output

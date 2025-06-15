@@ -1,23 +1,18 @@
 # Autonomy/Controller/quad_controller.py
 import numpy as np
-from Autonomy.PID import PID_class
+from .PID import PID_class
+from .guidance import Guidance
 from Global.Utils import linear_scale
-
+from Global.simdata import Mission_track_data, UAVState_class, Quad_controls, Quad_target
 
 class QuadController:
     def __init__(self, dt):
         self.dt = dt
+        self.output : Quad_controls = Quad_controls()
+        self.target : Quad_target = Quad_target()
         self._init_pids()
 
     def _init_pids(self):
-        # self.pids={}
-        # for axis in ["x", "y", "z"]:
-        #     self.pids[axis] : PID_class()
-        #     self.pids[f"{axis}_vel"] : PID_class()
-
-        # for axis in ['phi', 'theta', 'psi']:
-        #     self.pids[axis] : PID_class()
-        #     self.pids[f"{axis}_rate"] : PID_class()
         self.pids = {
             "x": PID_class(),
             "y": PID_class(),
@@ -76,56 +71,48 @@ class QuadController:
         self.pids["psi_rate"].set_output_limits(lower=-5, upper=5)
         self.pids["psi_rate"].set_integral_limits(lower=-3, upper=3)
 
-    def run(self, current_state, nav_state):
-        x, y, z = current_state[0:3]
-        vx, vy, vz = current_state[3:6]
-        phi, theta, psi = current_state[6:9]
-        phi_rate, theta_rate, psi_rate = current_state[9:12]
-        tx, ty, tz = nav_state["target_pos"]
-        target_heading = nav_state["target_heading"]
-
+    def run(self, current_state: UAVState_class , Mission_data: Mission_track_data):
+        self.target.x =Mission_data.curr_wp.x
+        self.target.y = Mission_data.curr_wp.y
+        self.target.altitude = Mission_data.curr_wp.z
+        self.target.heading = Mission_data.curr_wp.heading
         # x axis controller
-        target_x_vel = self.pids["x"].run_pid(tx, x, self.dt)
-        target_x_accel = self.pids["x_vel"].run_pid(target_x_vel, vx, self.dt)
+        target_x_vel = self.pids["x"].run_pid(self.target.x, current_state.x, self.dt)
+        target_x_accel = self.pids["x_vel"].run_pid(target_x_vel, current_state.x_vel, self.dt)
 
         # y axis controller
-        target_y_vel = self.pids["y"].run_pid(ty, y, self.dt)
-        target_y_accel = self.pids["y_vel"].run_pid(target_y_vel, vy, self.dt)
+        target_y_vel = self.pids["y"].run_pid(self.target.y, current_state.y, self.dt)
+        target_y_accel = self.pids["y_vel"].run_pid(target_y_vel, current_state.y_vel, self.dt)
 
         # Convert acceleration to desired angles using desired force and yaw
-        AX = target_x_accel * np.cos(psi) + target_y_accel * np.sin(psi)
-        AY = -target_x_accel * np.sin(psi) + target_y_accel * np.cos(psi)
+        AX = target_x_accel * np.cos(current_state.psi) + target_y_accel * np.sin(current_state.psi)
+        AY = -target_x_accel * np.sin(current_state.psi) + target_y_accel * np.cos(current_state.psi)
 
         desired_theta = -AX / 9.81
-        desired_phi = (np.cos(theta) * AY) / 9.81
+        desired_phi = (np.cos(current_state.theta) * AY) / 9.81
 
-        desired_theta = np.clip(desired_theta, ([np.deg2rad(-30), np.deg2rad(30)]))
-        desired_phi = np.clip(desired_phi, ([np.deg2rad(-30), np.deg2rad(30)]))
+        desired_theta = np.clip(desired_theta.astype(float), a_min=np.deg2rad(-30), a_max=np.deg2rad(30))
+        desired_phi   = np.clip(desired_phi.astype(float),   a_min=np.deg2rad(-30), a_max=np.deg2rad(30))
 
         # roll controller
-        desired_phi_rate = self.pids["phi"].run_pid(desired_phi, phi, self.dt)
-        roll_output = self.pids["phi_rate"].run_pid(desired_phi_rate, phi_rate, self.dt)
+        desired_phi_rate = self.pids["phi"].run_pid(desired_phi, current_state.phi, self.dt)
+        roll_output = self.pids["phi_rate"].run_pid(desired_phi_rate, current_state.phi_rate, self.dt)
 
         # pitch controller
-        desired_theta_rate = self.pids["theta"].run_pid(desired_theta, theta, self.dt)
-        pitch_output = self.pids["theta_rate"].run_pid(desired_theta_rate, theta_rate, self.dt)
+        desired_theta_rate = self.pids["theta"].run_pid(desired_theta, current_state.theta, self.dt)
+        pitch_output = self.pids["theta_rate"].run_pid(desired_theta_rate, current_state.theta_rate, self.dt)
 
         # yaw controller
-        desired_psi_rate = self.pids["psi"].run_pid(target_heading, psi, self.dt)
-        yaw_output = self.pids["psi_rate"].run_pid(desired_psi_rate, psi_rate, self.dt)
+        desired_psi_rate = self.pids["psi"].run_pid(self.target.heading, current_state.psi, self.dt)
+        yaw_output = self.pids["psi_rate"].run_pid(desired_psi_rate, current_state.psi_rate, self.dt)
 
         # altitude controller
-        desired_z_vel = self.pids["z"].run_pid(tz, z, self.dt)
-        altitude_output = self.pids["z_vel"].run_pid(desired_z_vel, vz, self.dt)
+        desired_z_vel = self.pids["z"].run_pid(self.target.altitude, current_state.z, self.dt)
+        altitude_output = self.pids["z_vel"].run_pid(desired_z_vel, current_state.z_vel, self.dt)
 
-        altitude_output = linear_scale(altitude_output, -5, 5, -1, 1)
-        roll_output = linear_scale(roll_output, -5, 5, -1, 1)
-        pitch_output = linear_scale(pitch_output, -5, 5, -1, 1)
-        yaw_output = linear_scale(yaw_output, -5, 5, -1, 1)
+        self.output.throttle = linear_scale(altitude_output, -5, 5, -1, 1)
+        self.output.roll = linear_scale(roll_output, -5, 5, -1, 1)
+        self.output.pitch = linear_scale(pitch_output, -5, 5, -1, 1)
+        self.output.yaw = linear_scale(yaw_output, -5, 5, -1, 1)
 
-        return {
-            "throttle": altitude_output,
-            "roll": roll_output,
-            "pitch": pitch_output,
-            "yaw": yaw_output,
-        }
+        return self.output

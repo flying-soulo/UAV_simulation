@@ -6,8 +6,9 @@ Integrates UAV Renderer and GCS Input Handler into a single window with a single
 
 from vpython import *
 import numpy as np
-from GUI.renderer import UAVRenderer
-from GUI.input_handler import GCSInput
+from .renderer import UAVRenderer
+from .input_handler import GCSInput
+from Global.simdata import GCSData_class
 
 class UAVinterface:
     def __init__(self,manual_control=False):
@@ -24,20 +25,19 @@ class UAVinterface:
 
         # Initialize UAV Renderer with manual control
         self.GCS = GCSInput(scene=self.scene)
-        self.visual = UAVRenderer(scene=self.scene, manual_control=manual_control)
+        self.visual = UAVRenderer(scene = self.scene, manual_control = manual_control)
+        self.output : GCSData_class
 
     def run(self):
-        self.gcs_data = self.GCS.run()
-        data = self.gcs_data
-        return self.gcs_data
+        self.output = self.GCS.run()
+        return self.output
 
     def update_uav_visual(self, state):
         self.visual.update_from_state(state)
 
 
 if __name__ == "__main__":
-    # Uncomment the following lines to run the UAV visualizer independently
-    viz = UAVinterface(manual_control=False)
+    viz = UAVinterface(manual_control=True)
     data = viz.run()
     print(f"\r", end="")
     print(data)

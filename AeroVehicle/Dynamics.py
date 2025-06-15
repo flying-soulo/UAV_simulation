@@ -1,12 +1,14 @@
 import numpy as np
 from Global.Utils import wrap, rotation_matrix
+from Global.simdata import UAVState_class, UAVForce_class, Actuator_class
 
 
 class VehicleForcesMoments:
     def __init__(self, vehicle_prop):
         self.vp = vehicle_prop
+        self.output : UAVForce_class
 
-    def compute(self, state, motor_thrust, ctrl_srfc_deflection):
+    def compute(self, current_state: UAVState_class, controls: Actuator_class):
         """
         Compute the forces and moments acting on the vehicle.
         Args:
@@ -16,9 +18,9 @@ class VehicleForcesMoments:
         """
 
         # Unpack state variables
-        u, v, w = state[3:6]
-        phi, theta, psi = state[6:9]
-        p, q, r = state[9:12]
+        u, v, w = current_state.x_vel, current_state.y_vel, current_state.z_vel
+        phi, theta, psi = current_state.phi, current_state.theta, current_state.psi
+        p, q, r = current_state.phi_rate, current_state.theta_rate, current_state.psi_rate
 
         # Unpack vehicle properties
         m = self.vp["m"]
@@ -32,9 +34,9 @@ class VehicleForcesMoments:
         beta = wrap(np.arcsin(np.clip(v / V, -1, 1)), -np.pi / 2, np.pi / 2)
         q_dyn = 0.5 * rho * V**2
 
-        aileron, elevator, rudder = ctrl_srfc_deflection
-        thrust_FW = motor_thrust[4]
-        thrust_LF, thrust_RF, thrust_RB, thrust_LB = motor_thrust[:4]
+        aileron, elevator, rudder = controls.FW_aileron, controls.FW_elevator, controls.FW_rudder
+        thrust_FW =  controls.FW_throttle
+        thrust_LF, thrust_RF, thrust_RB, thrust_LB = controls.Quad_Motor1, controls.Quad_Motor2, controls.Quad_Motor3, controls.Quad_Motor4
 
         R_ned_to_body = rotation_matrix(phi, theta, psi)
         R_stb_to_body = rotation_matrix(0, -alpha, 0)
@@ -68,7 +70,7 @@ class VehicleForcesMoments:
         F_aero_body[1] += q_dyn * S * CY
 
         # Thrust
-        thrust_body = np.array([thrust_FW, 0, -sum(motor_thrust[:4])])
+        thrust_body = np.array([thrust_FW, 0, -(thrust_LB + thrust_LF + thrust_RB + thrust_LB)])
         Fx, Fy, Fz = F_aero_body + gravity_body + thrust_body
 
         # Moments
@@ -98,4 +100,5 @@ class VehicleForcesMoments:
         m = q_dyn * S * c * Cm
         n = q_dyn * S * b * Cn
 
-        return np.array([Fx, Fy, Fz, l, m, n])
+        self.output = UAVForce_class(lift, drag, Fx, Fy, Fz, l, m, n)
+        return self.output

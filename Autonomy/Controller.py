@@ -2,27 +2,31 @@
 from Autonomy.fw_controller import FixedWingController
 from Autonomy.quad_controller import QuadController
 import numpy as np
+from Global.simdata import Controls_class, UAVState_class, Mission_track_data
 
 class ControllerManager:
     def __init__(self, dt):
-        self.fw = FixedWingController(dt)
-        self.quad = QuadController(dt)
-        self.motor = np.zeros(5)
-        self.ctrl_surface = np.zeros(3)
+        self.fw_controller = FixedWingController(dt)
+        self.quad_controller = QuadController(dt)
+        self.output : Controls_class = Controls_class()
 
-    def run(self, current_state, nav_state):
-        mode = nav_state.get("mode")
-        if mode == "FW":
-            output = self.fw.run(current_state, nav_state)
-            aileron = output["aileron"]
-            elevator = output["elevator"]
-            rudder = output["rudder"]
-            throttle = output["throttle"]
-            self.motor = [0,0,0,0, throttle]
-            self.ctrl_surface = [aileron, elevator, rudder]
-            return self.motor, self.ctrl_surface
+    def run(self, current_state: UAVState_class, target: Mission_track_data, mode: str):
 
-        elif mode == "QUAD":
-            return self.quad.run(current_state, nav_state)
-        else:
-            raise ValueError(f"Unsupported mode: {mode}")
+        match(mode):
+            case "FW":
+                self.output.FW = self.fw_controller.run(current_state, target)
+
+                self.output.Quad.pitch = 0
+                self.output.Quad.roll = 0
+                self.output.Quad.throttle = 0
+                self.output.Quad.yaw = 0
+
+            case "Quad":
+                self.output.Quad = self.quad_controller.run(current_state, target)
+
+                self.output.FW.aileron = 0
+                self.output.FW.elevator = 0
+                self.output.FW.rudder = 0
+                self.output.FW.throttle = 0
+
+        return self.output

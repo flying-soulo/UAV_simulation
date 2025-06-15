@@ -1,8 +1,10 @@
-from vpython import *
+from vpython import * # type: ignore
 import numpy as np
-from GUI.data_transform import ned_to_eus
-from GUI.environment import Environment
-from GUI.aircraft import Aircraft
+from .data_transform import ned_to_eus
+from .environment import Environment
+from .aircraft import Aircraft
+from Global.simdata import UAVState_class
+
 
 def make_sliders(scene, callback):
     labels = [
@@ -20,6 +22,7 @@ def make_sliders(scene, callback):
         sliders[key] = slider(min=mn, max=mx, value=init, step=1, bind=callback, length=500)
         scene.append_to_caption("\n")
     return sliders
+
 
 class UAVRenderer:
     def __init__(self, scene, manual_control=False):
@@ -62,13 +65,10 @@ class UAVRenderer:
             self.cam_distance = min(200.0, self.cam_distance + self.zoom_sensitivity)
             self.cam_height = min(100.0, self.cam_height + 0.5 * self.zoom_sensitivity)
 
-    def update_from_state(self, state):
-        pos_ned = state[0:3]
-        vel_body = state[3:6]
-        orient_ned_rad = state[6:9]
-        rates_rad = state[9:12]
+    def update_from_state(self, state: UAVState_class):
+        pos_ned = np.array([state.x, state.y, state.z])
+        orient_deg = np.degrees([state.psi, state.theta, state.phi])  # ZYX order
 
-        orient_deg = np.degrees(orient_ned_rad)
         pos_eus, rot_eus = ned_to_eus(pos_ned, orient_deg)
         self.uav.set_pose(pos_eus, rot_eus)
 
@@ -82,22 +82,18 @@ class UAVRenderer:
 
         self.show_telemetry(state)
 
-    def show_telemetry(self, state):
-        pos_ned = state[0:3]
-        vel_body = state[3:6]
-        angles_rad = state[6:9]
-        rates_rad = state[9:12]
-        angles_deg = np.rad2deg(angles_rad)
-        rates_dps = np.rad2deg(rates_rad)
+    def show_telemetry(self, state: UAVState_class):
+        angles_deg = np.rad2deg([state.phi, state.theta, state.psi])
+        rates_dps = np.rad2deg([state.phi_rate, state.theta_rate, state.psi_rate])
 
         text = (
             "=== UAV Telemetry ===\n"
-            f"North (m): {pos_ned[0]:.1f} | "
-            f"East  (m): {pos_ned[1]:.1f} | "
-            f"Down  (m): {pos_ned[2]:.1f} \n"
-            f"U (m/s): {vel_body[0]:.2f} | "
-            f"V (m/s): {vel_body[1]:.2f} | "
-            f"W (m/s): {vel_body[2]:.2f}\n"
+            f"North (m): {state.x:.1f} | "
+            f"East  (m): {state.y:.1f} | "
+            f"Down  (m): {state.z:.1f} \n"
+            f"U (m/s): {state.x_vel:.2f} | "
+            f"V (m/s): {state.y_vel:.2f} | "
+            f"W (m/s): {state.z_vel:.2f}\n"
             f"Roll  (°): {angles_deg[0]:.2f} | "
             f"Pitch (°): {angles_deg[1]:.2f} | "
             f"Yaw   (°): {angles_deg[2]:.2f}\n"
@@ -111,24 +107,27 @@ class UAVRenderer:
         if not self.manual_control or self.sliders is None:
             return
 
-        n = self.sliders["north"].value
-        e = self.sliders["east"].value
-        d = self.sliders["down"].value
-        r = self.sliders["roll"].value
-        p = self.sliders["pitch"].value
-        y = self.sliders["yaw"].value
+        # Build state manually
+        state = UAVState_class(
+            x=self.sliders["north"].value,
+            y=self.sliders["east"].value,
+            z=self.sliders["down"].value,
+            phi=np.deg2rad(self.sliders["roll"].value),
+            theta=np.deg2rad(self.sliders["pitch"].value),
+            psi=np.deg2rad(self.sliders["yaw"].value),
+        )
 
-        pos_eus, rot_eus = ned_to_eus(np.array([n, e, d]), np.array([y, p, r]))  # ZYX
+        # Convert and apply pose
+        pos_eus, rot_eus = ned_to_eus(np.array([state.x, state.y, state.z]),
+                                      np.degrees([state.psi, state.theta, state.phi]))  # ZYX
         self.uav.set_pose(pos_eus, rot_eus)
 
         cam_offset = vector(0, self.cam_height, self.cam_distance)
         cam_pos = vector(*pos_eus) + cam_offset
-
         self.scene.camera.pos = cam_pos
         self.scene.camera.axis = vector(*pos_eus) - cam_pos
         self.scene.camera.up = vector(0, 1, 0)
 
-        state = [n, e, d, 0, 0, 0, np.deg2rad(r), np.deg2rad(p), np.deg2rad(y), 0, 0, 0]
         self.show_telemetry(state)
 
     def on_slider(self, _):
