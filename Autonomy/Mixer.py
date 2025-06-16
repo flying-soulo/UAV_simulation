@@ -1,5 +1,5 @@
 import numpy as np
-from Global.utils import linear_scale
+from Global.Utils import linear_scale
 import Global.configs as configs
 from Global.simdata import Controls_class, Actuator_class
 

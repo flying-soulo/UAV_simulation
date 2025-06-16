@@ -1,5 +1,5 @@
 import numpy as np
-from Global.utils import wrap, rotation_matrix
+from Global.Utils import wrap, rotation_matrix
 from Global.simdata import UAVState_class, UAVForce_class, Actuator_class
 
 

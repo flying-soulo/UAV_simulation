@@ -1,5 +1,5 @@
 import numpy as np
-from Global.utils import wrap
+from Global.Utils import wrap
 from AeroVehicle.Vehicle_Properties import Aerosonde_vehicle
 
 

@@ -1,5 +1,5 @@
 import numpy as np
-from Global.utils import linear_scale, wrap, rotation_matrix
+from Global.Utils import linear_scale, wrap, rotation_matrix
 from AeroVehicle.Kinematics import SixDOFDynamics
 from AeroVehicle.Dynamics import VehicleForcesMoments
 from Global.simdata import UAVState_class, UAVForce_class, Actuator_class

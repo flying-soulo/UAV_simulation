@@ -1,6 +1,6 @@
 # Autonomy/autopilot.py
 import numpy as np
-from Autonomy.Path_planning import WaypointNavigator
+from Autonomy.Path_Planning import WaypointNavigator
 from Autonomy.Controller import ControllerManager
 from Autonomy.Mixer import Mixer
 from Global.simdata import GCSData_class, Actuator_class, UAVState_class, Waypoint_data_class
