@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-from vpython import vector, color, box, cone, compound
 
 _R_NED2EUS = np.array([
     [0, 1, 0],     # NED Y → EUS X

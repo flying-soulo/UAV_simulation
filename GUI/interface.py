@@ -4,10 +4,10 @@ This module provides a graphical user interface (GUI) for visualizing and contro
 Integrates UAV Renderer and GCS Input Handler into a single window with a single canvas.
 """
 
-from vpython import *
+from vpython import *  # type: ignore
 import numpy as np
-from .renderer import UAVRenderer
-from .input_handler import GCSInput
+from GUI.renderer import UAVRenderer
+from GUI.input_handler import GCSInput
 from Global.simdata import GCSData_class
 
 class UAVinterface:

@@ -1,8 +1,8 @@
 from vpython import * # type: ignore
 import numpy as np
-from .data_transform import ned_to_eus
-from .environment import Environment
-from .aircraft import Aircraft
+from GUI.data_transform import ned_to_eus
+from GUI.environment import Environment
+from GUI.aircraft import Aircraft
 from Global.simdata import UAVState_class
 
 
