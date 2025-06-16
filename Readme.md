@@ -1,90 +1,93 @@
-# 6-DOF UAV Simulation – Quadplane
+# UAV Simulation Project
 
-**Author:** Abhishek P M
-**Date:** March 27, 2025
+**Author:** Abhishek P M \
+**Last Updated:** June 2025
 
----
+
 
 ## 🎯 Objectives
 
-- Simulate UAV flight in **6 Degrees of Freedom (6-DOF)**
-- Follow a **modular architecture** for flexibility and scalability
-- Support **multiple UAV configurations** and future upgrades
-- Implement **realistic physics modeling**, including aerodynamics and propulsion
-- Enable **plug-and-play** integration of controller algorithms (e.g., PID, waypoint navigation)
-- Provide **sensor and environmental models**
-- Support **real-time data logging** for analysis and visualization
+- Simulate UAV dynamics in **6 Degrees of Freedom (6-DOF)**
+- Follow a **modular, scalable architecture** for multi-platform support
+- Enable development and testing of **control algorithms** (e.g., PID, Guidance)
+- Provide support for **real-time visualization and data logging**
+- Allow **plug-and-play development** for controllers, sensors, and missions
 
----
+
 
 ## 🧭 Purpose
 
-This project provides a structured, high-fidelity simulation platform for UAV system development and testing. It allows verification of flight dynamics, control strategies, and sensor interactions in software—eliminating early dependency on hardware prototypes.
+This simulation framework provides a structured, high-fidelity environment for the development and testing of UAV systems. It allows early-stage prototyping of guidance, navigation, and control (GNC) strategies in software before hardware deployment.
 
----
-
-## ⚙️ Assumptions
-
-- UAV is modeled as a **rigid body**
-- Simulation follows **model-based design principles**
-- Does not rely on any specific proprietary toolchain
-
-> Originally designed with **ANSYS SCADE** compatibility in mind. Can be extended to support multi-UAV platforms.
-
----
 
 ## 🏗️ System Architecture
 
-The system adopts a **modular and decoupled architecture**. Each module is independently upgradable and interacts with others using a **standardized data structure**. This ensures clean separation of concerns and promotes maintainability.
+The architecture is modular and decoupled across distinct functional domains:
 
----
 
-## 🧩 Module Overview
+Each module interfaces via a standardized shared data format, allowing independent upgrades and minimal coupling.
 
-### 1. **Simulation Module**
-- `plant`: Simulated UAV physical model
-- `kinematics`: Updates position, velocity, and orientation
-- `dynamics`: Applies Newton-Euler equations using force/torque inputs
 
-### 2. **Autopilot Module**
-- `autopilot`: High-level mission logic
-- `waypoint`: Navigation and path planning
-- `controller`: Abstract control interface
-- `PID`: Classical control implementation with tunable parameters
+## 🧩 Module Breakdown
 
-### 3. **Data Logging Module**
-- `simulation_log`: Time-series data storage
-- `simulation_plot`: Post-run plotting and visualization
+### 🚁 AeroVehicle/
+- **Kinematics.py**: Updates UAV pose and velocity using body rates
+- **Dynamics.py**: Implements Newton-Euler-based rigid body dynamics
+- **Vehicle_Sim.py**: Aggregates physics modeling, runs one full sim step
+- **Vehicle_Properties.py**: UAV-specific mass and inertia parameters
 
-### 4. **Visualization Module**
-- `virtual`: 2D/3D visual interface
-- `models`: Geometric representations of UAVs
+### 🧠 Autonomy/
+- **Controller.py**, **PID.py**, **fw_controller.py**, **quad_controller.py**: UAV-specific control loops
+- **Autopilot.py**, **guidance.py**, **path_planning.py**: High-level mission and waypoint logic
+- **FMM.py**: yet to implement the FMM and auto navigation
+- **Trim.py**: Computes trim conditions for steady-level flight, used in previous version - currently not used
 
-### 5. **Math Module**
-- `utils`: Shared utility functions (I/O, transformations, etc.)
+### 🖥️ GUI/
+- **interface.py**: GUI interface establishes a vpython windows with rendering and input handling
+- **renderer.py**: renders the 3d environment, UAV model and it's location and orientation along with telemetry data
+- **aircraft.py**: renders a UAV model in vpython environment
+- **environment.py**: creates environmental effects to get a relative sense of the aircraft moevements
+- **input_handler.py**: creates a input interfaces and upates data in real time
 
----
+### 🛠️ Global/
+- **configs.py**: Centralized configuration settings - yet to implement all the configs, most configs are defined locally
+- **simdata.py**: contians dataclasses used in the whole project, allowing to track and manage the modules interaction with each other
+- **utils.py**, **filter.py**: Math utilities and sensor filtering
 
-## 🔄 Integration Method
+### 📊 logger/
+- **datalogger.py**: CSV-based time-series logging
+- **sim_plot.py**: Matplotlib-based plotting utility
+- **Outputs**: `simulation.csv`, `simulation.png`
+    Note: developed for previous version not incorporated in this version
 
-A central **Simulation and Integration Layer** synchronizes all modules through a **uniform struct-based data exchange format**.
 
-Benefits:
-- Easy replacement or upgrade of components
-- Clean and testable architecture
-- Promotes rapid prototyping and debugging
 
----
+## 🔄 Simulation Flow
 
-## 🚀 Project Features
+The simulation integrates through `main.py`, which:
 
-- Fully modular, extensible framework
-- Rigid-body dynamics with realistic force modeling
-- Sensor and environment simulation
-- Customizable control logic (PID, waypoint-following, etc.)
-- Real-time logging and 3D visualization support
+1. Initializes vehicle simulation, Autopilot, and GUI
+2. Iteratively updates physics, control, and GUI
+3. Logs data and triggers visualization
 
----
+All data is exchanged through the dataclass objects defined in `Global/simdata.py`, ensuring synchronization across modules.
 
-## 📁 Repository Structure
 
+## 🚀 Key Features
+
+- ✅ 6-DOF Rigid Body Dynamics
+- ✅ Modular support for **fixed-wing and multirotor UAVs**
+- ✅ Plug-and-play controller design (PID, Guidance)
+- ✅ Integrated **3D GUI visualization**
+- ✅ Logging and real-time plotting
+- 🔄 Implemention test modules for each modules - only available for GUI
+
+
+## 📁 How to Run
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the simulation
+python -m main
