@@ -117,24 +117,30 @@ class Controls_class:
 ########################################################################
 ############################## Simulation ##############################
 ########################################################################
+@dataclass
+class Quad_actuator:
+    Motor1: float = 0
+    Motor2: float = 0
+    Motor3: float = 0
+    Motor4: float = 0
+
+@dataclass
+class FW_actuator:
+    throttle: float = 0
+    aileron: float = 0
+    elevator: float = 0
+    rudder: float = 0
 
 @dataclass
 class Actuator_class:
     """
     Data class for the values of the UAV control values
     """
-
     # QUad controls
-    Quad_Motor1: float = 0
-    Quad_Motor2: float = 0
-    Quad_Motor3: float = 0
-    Quad_Motor4: float = 0
+    Quad: Quad_actuator = field(default_factory=Quad_actuator)
 
     # FW Controls
-    FW_throttle: float = 0
-    FW_aileron: float = 0
-    FW_elevator: float = 0
-    FW_rudder: float = 0
+    FW : FW_actuator = field(default_factory=FW_actuator)
 
 
 @dataclass

@@ -1,12 +1,5 @@
 import numpy as np
-from Global.simdata import (
-    Waypoint_data_class,
-    Waypoint_class,
-    Mission_track_data,
-    FW_target,
-    Quad_target,
-    UAVState_class,
-)
+from Global.simdata import Waypoint_data_class, Waypoint_class, Mission_track_data, UAVState_class
 
 
 class WaypointNavigator:

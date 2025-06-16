@@ -34,9 +34,9 @@ class VehicleForcesMoments:
         beta = wrap(np.arcsin(np.clip(v / V, -1, 1)), -np.pi / 2, np.pi / 2)
         q_dyn = 0.5 * rho * V**2
 
-        aileron, elevator, rudder = controls.FW_aileron, controls.FW_elevator, controls.FW_rudder
-        thrust_FW =  controls.FW_throttle
-        thrust_LF, thrust_RF, thrust_RB, thrust_LB = controls.Quad_Motor1, controls.Quad_Motor2, controls.Quad_Motor3, controls.Quad_Motor4
+        aileron, elevator, rudder = controls.FW.aileron, controls.FW.elevator, controls.FW.rudder
+        thrust_FW =  controls.FW.throttle
+        thrust_LF, thrust_RF, thrust_RB, thrust_LB = controls.Quad.Motor1, controls.Quad.Motor2, controls.Quad.Motor3, controls.Quad.Motor4
 
         R_ned_to_body = rotation_matrix(phi, theta, psi)
         R_stb_to_body = rotation_matrix(0, -alpha, 0)

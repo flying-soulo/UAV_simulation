@@ -16,14 +16,14 @@ class UAVSimulator:
 
         # Waypoints: (x, y, z, speed, mode)
         self.GCS_data : GCSData_class = GCSData_class()
-        self.current_state : UAVState_class = UAVState_class()
         self.forces_moments : UAVForce_class = UAVForce_class()
         self.Actuators : Actuator_class = Actuator_class()
+        self.current_state : UAVState_class = UAVState_class()
+        self.update_step : UAVState_class = UAVState_class()
 
         # State and control initialization
         self.current_state.z = -1000  # Initial altitude
         self.current_state.x_vel = 30  # Initial airspeed
-        self.update_step = np.zeros(12)
 
         # Initialize vehicle, simulation, autopilot, and interface
         self.vehicle_prop = Aerosonde_vehicle.copy()
@@ -34,21 +34,19 @@ class UAVSimulator:
     def restart(self):
         # Reset only the backend simulation components
         self.GCS_data = GCSData_class()
-        self.current_state = UAVState_class()
         self.forces_moments = UAVForce_class()
         self.Actuators = Actuator_class()
+        self.current_state = UAVState_class()
+        self.update_step = UAVState_class()
 
         # Reinitialize state variables
         self.current_state.z = -1000
         self.current_state.x_vel = 30
-        self.update_step = np.zeros(12)
 
         # Reset vehicle, autopilot, and simulation logic (not GUI)
         self.vehicle_prop = Aerosonde_vehicle.copy()
         self.simulation = UAVSimulation(self.vehicle_prop, self.dt)
         self.autopilot = UAVAutopilot(self.GCS_data, self.dt)
-
-    # DO NOT reset: self.interface
 
     def run_simulation(self):
         runsim = False
@@ -60,6 +58,7 @@ class UAVSimulator:
             match (self.GCS_data.sim_command):
                 case "start":
                     runsim = True
+                    self.GCS_data.mode = "Auto"
 
                 case "pause":
                     runsim = False

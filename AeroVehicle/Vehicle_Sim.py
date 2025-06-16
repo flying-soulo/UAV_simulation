@@ -22,15 +22,14 @@ class UAVSimulation:
     def simulate_one_step(self, current_state: UAVState_class, control_input: Actuator_class ):
 
         # Scale motor thrusts and control surface deflections
-        self.controls.Quad_Motor1 = linear_scale(control_input.Quad_Motor1, 1100, 2000, self.min_thrust, self.max_thrust)
-        self.controls.Quad_Motor2 = linear_scale(control_input.Quad_Motor2, 1100, 2000, self.min_thrust, self.max_thrust)
-        self.controls.Quad_Motor3 = linear_scale(control_input.Quad_Motor3, 1100, 2000, self.min_thrust, self.max_thrust)
-        self.controls.Quad_Motor4 = linear_scale(control_input.Quad_Motor4, 1100, 2000, self.min_thrust, self.max_thrust)
-        self.controls.FW_throttle = linear_scale(control_input.FW_throttle, 1100, 2000, self.min_thrust, self.max_thrust)
-
-        self.controls.FW_aileron = linear_scale(self.controls.FW_aileron, 1100, 2000, self.min_deflection, self.max_deflection)
-        self.controls.FW_elevator = linear_scale(self.controls.FW_elevator, 1100, 2000, self.min_deflection, self.max_deflection)
-        self.controls.FW_rudder= linear_scale(self.controls.FW_rudder, 1100, 2000, self.min_deflection, self.max_deflection)
+        self.controls.Quad.Motor1 = linear_scale(control_input.Quad.Motor1, 1100, 2000, self.min_thrust, self.max_thrust)
+        self.controls.Quad.Motor2 = linear_scale(control_input.Quad.Motor2, 1100, 2000, self.min_thrust, self.max_thrust)
+        self.controls.Quad.Motor3 = linear_scale(control_input.Quad.Motor3, 1100, 2000, self.min_thrust, self.max_thrust)
+        self.controls.Quad.Motor4 = linear_scale(control_input.Quad.Motor4, 1100, 2000, self.min_thrust, self.max_thrust)
+        self.controls.FW.throttle = linear_scale(control_input.FW.throttle, 1100, 2000, self.min_thrust, self.max_thrust)
+        self.controls.FW.aileron = linear_scale(self.controls.FW.aileron, 1100, 2000, self.min_deflection, self.max_deflection)
+        self.controls.FW.elevator = linear_scale(self.controls.FW.elevator, 1100, 2000, self.min_deflection, self.max_deflection)
+        self.controls.FW.rudder= linear_scale(self.controls.FW.rudder, 1100, 2000, self.min_deflection, self.max_deflection)
 
         # Compute forces and dynamics
         self.forces_moments = self.dynamics.compute(current_state, self.controls)
@@ -60,9 +59,9 @@ class UAVSimulation:
         V_body = np.array([u, v, w])
         R_ned_to_body = rotation_matrix(phi, theta, psi)
         V_ned = R_ned_to_body.T @ V_body
-        self.updated_state.x_vel += V_ned[0] * self.dt
-        self.updated_state.y_vel += V_ned[1] * self.dt
-        self.updated_state.z_vel += V_ned[2] * self.dt
+        self.updated_state.x = current_state.x + V_ned[0] * self.dt
+        self.updated_state.y = current_state.y + V_ned[1] * self.dt
+        self.updated_state.z = current_state.z + V_ned[2] * self.dt
 
         # Update full state
         self.updated_state.x_vel = u

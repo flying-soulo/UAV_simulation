@@ -15,11 +15,11 @@ class Mixer:
         self.output: Actuator_class = Actuator_class()
         self.input: Controls_class = Controls_class()
 
-    def run(self, mode: str, mixerinput: Controls_class):
-
+    def run(self, mode: str, input: Controls_class):
+        self.input = input
         match (mode):
             case "Auto":
-                self.output.FW_throttle = linear_scale(
+                self.output.FW.throttle = linear_scale(
                     self.input.FW.throttle,
                     in_min=configs.radio_throttle_inputs[0],
                     in_max=configs.radio_throttle_inputs[1],
@@ -28,21 +28,21 @@ class Mixer:
                 )
 
                 # Assign values to the 3 control surfaces (indices 0 to 2)
-                self.output = linear_scale(
+                self.output.FW.aileron = linear_scale(
                     self.input.FW.aileron,
                     in_min=configs.radio_roll_inputs[0],
                     in_max=configs.radio_roll_inputs[1],
                     out_min=configs.PWM_output[0],
                     out_max=configs.PWM_output[1],
                 )
-                self.output.FW_elevator = linear_scale(
+                self.output.FW.elevator = linear_scale(
                     self.input.FW.elevator,
                     in_min=configs.radio_pitch_inputs[0],
                     in_max=configs.radio_pitch_inputs[1],
                     out_min=configs.PWM_output[0],
                     out_max=configs.PWM_output[1],
                 )
-                self.output.FW_rudder = linear_scale(
+                self.output.FW.rudder = linear_scale(
                     self.input.FW.rudder,
                     in_min=configs.radio_yaw_inputs[0],
                     in_max=configs.radio_yaw_inputs[1],
@@ -50,20 +50,20 @@ class Mixer:
                     out_max=configs.PWM_output[1],
                 )
 
-                self.output.Quad_Motor1 = 0
-                self.output.Quad_Motor2 = 0
-                self.output.Quad_Motor3 = 0
-                self.output.Quad_Motor4 = 0
+                self.output.Quad.Motor1 = 0
+                self.output.Quad.Motor2 = 0
+                self.output.Quad.Motor3 = 0
+                self.output.Quad.Motor4 = 0
 
             case "shutdown":
-                self.output.Quad_Motor1 = 0
-                self.output.Quad_Motor2 = 0
-                self.output.Quad_Motor3 = 0
-                self.output.Quad_Motor4 = 0
-                self.output.FW_throttle = 0
-                self.output.FW_aileron = 0
-                self.output.FW_elevator = 0
-                self.output.FW_rudder = 0
+                self.output.Quad.Motor1 = 0
+                self.output.Quad.Motor2 = 0
+                self.output.Quad.Motor3 = 0
+                self.output.Quad.Motor4 = 0
+                self.output.FW.throttle = 0
+                self.output.FW.aileron = 0
+                self.output.FW.elevator = 0
+                self.output.FW.rudder = 0
 
             # case "manual":
             #     self.motor = mixerinput[0:5]

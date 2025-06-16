@@ -29,7 +29,7 @@ class UAVAutopilot:
         self.mixer = Mixer()
 
         # Mixer output
-        self.controls = Actuator_class(0,0,0,0,0,0,0,0)
+        self.controls : Actuator_class = Actuator_class()
 
 
     def run(self, current_state: UAVState_class, GCSdata: GCSData_class):
@@ -43,6 +43,6 @@ class UAVAutopilot:
 
         mixer_input = self.controller_mgr.run(current_state, nav_target, mode = GCSdata.mode)
 
-        self.output = self.mixer.run(mode= GCSdata.mode, mixerinput= mixer_input)
+        self.output = self.mixer.run(GCSdata.mode, mixer_input)
 
         return self.output

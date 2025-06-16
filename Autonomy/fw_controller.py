@@ -102,7 +102,7 @@ class FixedWingController:
             self.output.throttle, self.output.elevator = self.tecs(
                 h=current_state.z,
                 h_des=self.target.altitude,
-                V=current_state.airspeed,
+                V=current_state.x_vel,
                 V_des=self.target.airspeed,
                 dt=self.dt,
             )
@@ -116,7 +116,7 @@ class FixedWingController:
             # --- Throttle Control: Airspeed loop ---
             self.output.throttle = (
                 self.pids["airspeed"].run_pid(
-                    self.target.airspeed, current_state.airspeed, self.dt
+                    self.target.airspeed, current_state.x_vel, self.dt
                 )
                 + 60.0
             )
