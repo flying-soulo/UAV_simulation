@@ -15,13 +15,13 @@ class Waypoint_class:
     """
 
     x: float = 0
-    y: float  = 0
+    y: float = 0
     z: float = 0
 
     heading: float = 0
 
     action: str = ""
-    mode: str =""
+    mode: str = ""
     next: int = 1
 
 
@@ -32,7 +32,7 @@ class Waypoint_data_class:
     """
 
     home: Waypoint_class = field(default_factory=Waypoint_class)
-    waypoints: list[Waypoint_class] = field(default_factory = lambda: [Waypoint_class()])
+    waypoints: list[Waypoint_class] = field(default_factory=lambda: [Waypoint_class()])
     loop: bool = False
 
 
@@ -55,7 +55,9 @@ class GCSData_class:
     state: str = "idle"
     command: str = ""
 
-    waypoint_data: Waypoint_data_class = field(default_factory=lambda: Waypoint_data_class())
+    waypoint_data: Waypoint_data_class = field(
+        default_factory=lambda: Waypoint_data_class()
+    )
     update_waypoint: bool = False
     current_waypoint: int = 0
 
@@ -81,11 +83,15 @@ class Quad_target:
 
 
 @dataclass
+class Target_data_struct:
+    Quad: Quad_target = field(default_factory=Quad_target)
+    FW: FW_target = field(default_factory=FW_target)
+
+
+@dataclass
 class Mission_track_data:
     curr_wp: Waypoint_class = field(default_factory=Waypoint_class)
     prev_wp: Waypoint_class = field(default_factory=Waypoint_class)
-
-
 
 
 @dataclass
@@ -124,6 +130,7 @@ class Quad_actuator:
     Motor3: float = 0
     Motor4: float = 0
 
+
 @dataclass
 class FW_actuator:
     throttle: float = 0
@@ -131,16 +138,18 @@ class FW_actuator:
     elevator: float = 0
     rudder: float = 0
 
+
 @dataclass
 class Actuator_class:
     """
     Data class for the values of the UAV control values
     """
+
     # QUad controls
     Quad: Quad_actuator = field(default_factory=Quad_actuator)
 
     # FW Controls
-    FW : FW_actuator = field(default_factory=FW_actuator)
+    FW: FW_actuator = field(default_factory=FW_actuator)
 
 
 @dataclass
@@ -168,7 +177,7 @@ class UAVState_class:
     theta_rate: float = 0
     psi_rate: float = 0
 
-    airspeed: float  = 0
+    airspeed: float = 0
 
 
 @dataclass
@@ -190,5 +199,3 @@ class UAVForce_class:
     l_moment: float = 0
     m_moment: float = 0
     n_moment: float = 0
-
-

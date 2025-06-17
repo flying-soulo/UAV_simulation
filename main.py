@@ -1,12 +1,11 @@
 import time
 import numpy as np
-import pandas as pd
 from Autonomy.Autopilot import UAVAutopilot
 from AeroVehicle.Vehicle_Sim import UAVSimulation
 from GUI.interface import UAVinterface
 from AeroVehicle.Vehicle_Properties import Aerosonde_vehicle
 from vpython import rate
-from Global.simdata import UAVForce_class, UAVState_class, Actuator_class, GCSData_class
+from Global.simdata import UAVForce_class, UAVState_class, Actuator_class, GCSData_class, Waypoint_class
 
 class UAVSimulator:
     def __init__(self):
@@ -15,11 +14,16 @@ class UAVSimulator:
         self.dt = 1 / self.freq
 
         # Waypoints: (x, y, z, speed, mode)
-        self.GCS_data : GCSData_class = GCSData_class()
         self.forces_moments : UAVForce_class = UAVForce_class()
         self.Actuators : Actuator_class = Actuator_class()
         self.current_state : UAVState_class = UAVState_class()
         self.update_step : UAVState_class = UAVState_class()
+        self.GCS_data : GCSData_class = GCSData_class()
+        self.GCS_data.waypoint_data.home = Waypoint_class(x = 1000, y = 1000, z = -1000, heading = 0, action = "reach", mode = "Auto", next = 0)
+        self.GCS_data.waypoint_data.waypoints[0] = Waypoint_class(x = 3000, y = 1000, z = -1000, heading = 0, action = "reach", mode = "Auto", next = 1)
+        self.GCS_data.waypoint_data.waypoints.append(Waypoint_class(x = 3000, y = 3000, z = -1000, heading = 0, action = "reach", mode = "Auto", next = 2))
+        self.GCS_data.waypoint_data.waypoints.append(Waypoint_class(x = -3000, y = 3000, z = -1000, heading = 0, action = "reach", mode = "Auto", next = 3))
+        self.GCS_data.waypoint_data.waypoints.append(Waypoint_class(x = -3000, y = -3000, z = -1000, heading = 0, action = "reach", mode = "Auto", next = 4))
 
         # State and control initialization
         self.current_state.z = -1000  # Initial altitude

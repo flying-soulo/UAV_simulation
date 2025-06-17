@@ -2,7 +2,7 @@
 import numpy as np
 from .PID import PID_class
 from .guidance import Guidance
-from Global.Utils import linear_scale
+from Global.utils import linear_scale
 from Global.simdata import Mission_track_data, UAVState_class, FW_controls, FW_target
 
 

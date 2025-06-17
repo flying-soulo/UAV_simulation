@@ -1,6 +1,5 @@
 import numpy as np
-from Global.simdata import Waypoint_class
-from Global.simdata import FW_target, Mission_track_data
+from Global.simdata import Waypoint_class, FW_target, Mission_track_data
 
 class Guidance:
     def __init__(self, min_L1_dist=20.0, L1_ratio=1.5, default_airspeed=30.0):

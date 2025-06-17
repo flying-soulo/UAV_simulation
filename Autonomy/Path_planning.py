@@ -1,7 +1,6 @@
 import numpy as np
 from Global.simdata import Waypoint_data_class, Waypoint_class, Mission_track_data, UAVState_class
 
-
 class WaypointNavigator:
     def __init__(self, waypoint_data: Waypoint_data_class):
         self.waypoint_data = waypoint_data
@@ -9,6 +8,7 @@ class WaypointNavigator:
         self.previous_index = 0
         self.next_index = 0
         self.output: Mission_track_data = Mission_track_data()
+        self.quad_timer = 0
 
     def update_waypoint(self, waypoint_data: Waypoint_class, num: int):
         self.waypoint_data.waypoints[num] = waypoint_data
@@ -27,13 +27,12 @@ class WaypointNavigator:
         if mode == "FW":
             return dist < 120
         elif mode == "Quad":
-            timer = 0
             if dist < 5:
-                timer = timer + 1
+                self.quad_timer +=  1
             elif dist > 5:
-                timer = 0
+                self.quad_timer = 0
 
-            if timer > 500:
+            if self.quad_timer > 500:
                 return True
             else:
                 return False
