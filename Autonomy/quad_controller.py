@@ -1,7 +1,6 @@
 # Autonomy/Controller/quad_controller.py
 import numpy as np
 from Autonomy.PID import PID_class
-from Autonomy.guidance import Guidance
 from Global.utils import linear_scale
 from Global.simdata import Mission_track_data, UAVState_class, Quad_controls, Quad_target
 
