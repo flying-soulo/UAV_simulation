@@ -33,7 +33,6 @@ class Waypoint_data_class:
 
     home: Waypoint_class = field(default_factory=Waypoint_class)
     waypoints: list[Waypoint_class] = field(default_factory=lambda: [Waypoint_class()])
-    loop: bool = False
 
 
 @dataclass
@@ -58,7 +57,7 @@ class GCSData_class:
     waypoint_data: Waypoint_data_class = field(
         default_factory=lambda: Waypoint_data_class()
     )
-    update_waypoint: bool = False
+    update_waypoints: bool = False
     current_waypoint: int = 0
 
     radio_data: Radio_data_class = field(default_factory=Radio_data_class)
