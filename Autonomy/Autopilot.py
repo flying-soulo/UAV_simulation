@@ -4,6 +4,7 @@ from Autonomy.Path_planning import WaypointNavigator
 from Autonomy.Controller import ControllerManager
 from Autonomy.Mixer import Mixer
 from Global.simdata import GCSData_class, Actuator_class, UAVState_class, Waypoint_data_class
+from Autonomy.FMM import Flight_Mode_manager
 
 class UAVAutopilot:
     """
@@ -19,17 +20,14 @@ class UAVAutopilot:
         """
         self.dt = dt
 
-        # Navigation manager
-        self.navigator = WaypointNavigator(GCS_data.waypoint_data)
+        # Flight mode manager
+        self.FMM = Flight_Mode_manager(GCS_data)
 
         # controller
         self.controller_mgr = ControllerManager(self.dt)
 
         # mixer
         self.mixer = Mixer()
-
-        # Mixer output
-        self.controls : Actuator_class = Actuator_class()
 
 
     def run(self, current_state: UAVState_class, GCSdata: GCSData_class):
@@ -39,9 +37,9 @@ class UAVAutopilot:
             control output: outputs the controls values for the UAV
         """
 
-        nav_target = self.navigator.update(current_state, mode= GCSdata.mode)
+        nav_target, controller_flags = self.FMM.run(GCSdata, current_state)
 
-        mixer_input = self.controller_mgr.run(current_state, nav_target, mode = GCSdata.mode)
+        mixer_input = self.controller_mgr.run(current_state, nav_target, controller_flags)
 
         self.output = self.mixer.run(GCSdata.mode, mixer_input)
 

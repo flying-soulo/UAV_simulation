@@ -2,7 +2,7 @@
 import numpy as np
 from Autonomy.PID import PID_class
 from Global.utils import linear_scale
-from Global.simdata import Mission_track_data, UAVState_class, Quad_controls, Quad_target
+from Global.simdata import UAVState_class, Quad_controls, Quad_target
 
 class QuadController:
     def __init__(self, dt):
@@ -70,11 +70,8 @@ class QuadController:
         self.pids["psi_rate"].set_output_limits(lower=-5, upper=5)
         self.pids["psi_rate"].set_integral_limits(lower=-3, upper=3)
 
-    def run(self, current_state: UAVState_class , Mission_data: Mission_track_data):
-        self.target.x =Mission_data.curr_wp.x
-        self.target.y = Mission_data.curr_wp.y
-        self.target.altitude = Mission_data.curr_wp.z
-        self.target.heading = Mission_data.curr_wp.heading
+    def run(self, current_state: UAVState_class , Mission_data: Quad_target):
+        self.target = Mission_data
         # x axis controller
         target_x_vel = self.pids["x"].run_pid(self.target.x, current_state.x, self.dt)
         target_x_accel = self.pids["x_vel"].run_pid(target_x_vel, current_state.x_vel, self.dt)

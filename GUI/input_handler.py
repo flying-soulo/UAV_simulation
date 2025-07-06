@@ -14,76 +14,85 @@ from Global.simdata import (
 )
 
 # === LOGGING CONFIG ===
-DEBUG_TO_CONSOLE = True  # Toggle between console or file logging
+DEBUG_TO_CONSOLE = False  # Toggle between console or file logging
 
 if DEBUG_TO_CONSOLE:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 else:
     logging.basicConfig(
-        filename="gcs_debug.log",
+        filename="logger/gcs_debug.log",
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(message)s"
     )
 
 
 class GCSInput:
-    def __init__(self, scene: canvas):
+    def __init__(self, scene: canvas, waypoint_data:Waypoint_data_class):
         self.scene = scene
         self.scene.select()
 
-        self.waypoint_data: Waypoint_data_class = Waypoint_data_class()
+        self.waypoint_data: Waypoint_data_class = waypoint_data
         self.GCS_data: GCSData_class = GCSData_class()
-        self.radio_data: Radio_data_class = Radio_data_class()
+        self.radio: Radio_data_class = Radio_data_class()
 
         self.cmd_buttons = {}
         self.mode_buttons = {}
         self.waypoint_buttons = {}
 
+        self.previous_mode : str = "AUTO"
         self.create_controls()
         self.scene.bind("keydown", self.radio_control_input)
 
     def radio_control_input(self, evt: event_return):
-        if self.GCS_data.mode == "manual":
+        if self.GCS_data.mode == "MANUAL ":
             k = evt.key
             if k == "w":
-                self.radio_data.radio_channel3 += 1
+                self.radio.channel3 += 1
             elif k == "s":
-                self.radio_data.radio_channel3 -= 1
+                self.radio.channel3 -= 1
             elif k == "a":
-                self.radio_data.radio_channel4 -= 1
+                self.radio.channel4 -= 1
             elif k == "d":
-                self.radio_data.radio_channel4 += 1
+                self.radio.channel4 += 1
             elif k == "up":
-                self.radio_data.radio_channel2 += 1
+                self.radio.channel2 += 1
             elif k == "down":
-                self.radio_data.radio_channel2 -= 1
+                self.radio.channel2 -= 1
             elif k == "left":
-                self.radio_data.radio_channel1 -= 1
+                self.radio.channel1 -= 1
             elif k == "right":
-                self.radio_data.radio_channel1 += 1
+                self.radio.channel1 += 1
+            elif k == "q":
+                if self.radio.mode_switch == "FW_MANUAL":
+                    self.radio.mode_switch = "QD_MANUAL"
+                elif self.radio.mode_switch == "FW_MANUAL":
+                    self.radio.mode_switch = "QD_MANUAL"
 
-        self.radio_data.radio_channel3 = np.clip(self.radio_data.radio_channel3, -100, 100)
-        self.radio_data.radio_channel1 = np.clip(self.radio_data.radio_channel1, -10, 10)
-        self.radio_data.radio_channel2 = np.clip(self.radio_data.radio_channel2, -10, 10)
-        self.radio_data.radio_channel4 = np.clip(self.radio_data.radio_channel4, -10, 10)
+        self.radio.channel3 = np.clip(self.radio.channel3, -100, 100)
+        self.radio.channel1 = np.clip(self.radio.channel1, -100, 100)
+        self.radio.channel2 = np.clip(self.radio.channel2, -100, 100)
+        self.radio.channel4 = np.clip(self.radio.channel4, -100, 100)
 
     def create_sim_command_inputs(self):
-        self.scene.append_to_caption("\n              GCS COMMANDS              \n")
-
-        for m in ["start", "pause", "reset", "stop"]:
-            self.cmd_buttons[m] = button(
-                text=m.upper(),
-                bind=lambda _, m=m: (setattr(self.GCS_data, 'sim_command', m), self.update_button_colors(m, self.cmd_buttons))
-            )
+        self.scene.append_to_caption("\n              SIM COMMANDS              \n")
+        for m in ["START", "PAUSE", "RESET", "STOP"]:
+            self.cmd_buttons[m] = button(text=m.upper(),bind=lambda _, m=m: (setattr(self.GCS_data, 'sim_command', m), self.update_button_colors(m, self.cmd_buttons)))
             self.scene.append_to_caption(" ")
+
+    def create_gcs_command_inputs(self):
+        self.scene.append_to_caption("\n         GCS COMMANDS                 \n")
+        for mode in ["ARM", "LAUNCH", "ABORT", "DISARM", "LAND"]:
+            self.mode_buttons[mode] = button(text=mode.upper(),bind= self.set_gcs_command(mode))
+            self.scene.append_to_caption(" ")
+
+    def set_gcs_command(self, mode:str):
+
+        self.update_button_colors(mode, self.mode_buttons)
 
     def create_mode_inputs(self):
         self.scene.append_to_caption("\n         MODES                 \n")
-        for m in ["Auto", "takeoff", "Althold", "Poshold", "manual", "land"]:
-            self.mode_buttons[m] = button(
-                text=m.upper(),
-                bind=lambda _, m=m: (setattr(self.GCS_data, 'mode', m), self.update_button_colors(m, self.mode_buttons))
-            )
+        for m in ["AUTO", "QD ALTHOLD", "QD POSHOLD", "MANUAL"]:
+            self.mode_buttons[m] = button(text=m.upper(),bind=lambda _, m=m: (setattr(self.GCS_data, 'mode', m), self.update_button_colors(m, self.mode_buttons)))
             self.scene.append_to_caption(" ")
 
     def create_waypoint_inputs(self):
@@ -117,7 +126,7 @@ class GCSInput:
         self.set_wp_button = button(text="save Waypoint", bind=self.set_waypoint)
 
         self.scene.append_to_caption("  ")
-        self.upload_waypoint_button = button(text="Upload waypoints", bind=lambda: setattr(self.GCS_data, 'update_waypoints', True))
+        self.upload_waypoint_button = button(text="Upload waypoints", bind=lambda: setattr(self.GCS_data, 'upload_waypoints', True))
 
     def show_input_waypoint(self):
         wp = self.waypoint_index_input.selected
@@ -141,7 +150,6 @@ class GCSInput:
         self.waypoint_buttons["mode"].text = wp_data.mode
         self.waypoint_buttons["action"].text = wp_data.action
         self.waypoint_buttons["next"].text = wp_data.next
-
 
     def set_waypoint(self):
         try:
@@ -185,37 +193,33 @@ class GCSInput:
         self.create_mode_inputs()
         self.create_waypoint_inputs()
 
-    def set_mode(self, mode):
-        self.GCS_data.mode = mode
-
     def run(self):
-        self.GCS_data.state = ""
-        self.GCS_data.radio_data = self.radio_data
+        self.GCS_data.radio = self.radio
         return self.GCS_data
 
-def main():
-    scene.title = "GCS Input Test"
-    scene.width = 600
-    scene.height = 400
-    scene.center = vector(0, 0, 0)
+# def main():
+#     scene.title = "GCS Input Test"
+#     scene.width = 600
+#     scene.height = 400
+#     scene.center = vector(0, 0, 0)
 
-    gcs = GCSInput(scene)
+#     gcs = GCSInput(scene)
 
-    while True:
-        rate(20)
-        data = gcs.run()
+#     while True:
+#         rate(20)
+#         data = gcs.run()
 
-        logging.info(
-            f"MODE: {data.mode} | CMD: {data.command} | "
-            f"T:{data.radio_data.radio_channel1:.1f} "
-            f"R:{data.radio_data.radio_channel4:.1f} "
-            f"P:{data.radio_data.radio_channel3:.1f} "
-            f"Y:{data.radio_data.radio_channel2:.1f} | "
-            f"HOME: ({data.waypoint_data.home.x:.1f}, "
-            f"{data.waypoint_data.home.y:.1f}, "
-            f"{data.waypoint_data.home.z:.1f})"
-        )
+#         logging.info(
+#             f"MODE: {data.mode} | CMD: {data.command} | "
+#             f"T:{data.radio.channel1:.1f} "
+#             f"R:{data.radio.channel4:.1f} "
+#             f"P:{data.radio.channel3:.1f} "
+#             f"Y:{data.radio.channel2:.1f} | "
+#             f"HOME: ({data.waypoint_data.home.x:.1f}, "
+#             f"{data.waypoint_data.home.y:.1f}, "
+#             f"{data.waypoint_data.home.z:.1f})"
+#         )
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()

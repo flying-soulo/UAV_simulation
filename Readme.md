@@ -3,8 +3,6 @@
 **Author:** Abhishek P M \
 **Last Updated:** June 2025
 
-
-
 ## 🎯 Objectives
 
 - Simulate UAV dynamics in **6 Degrees of Freedom (6-DOF)**
@@ -13,20 +11,15 @@
 - Provide support for **real-time visualization and data logging**
 - Allow **plug-and-play development** for controllers, sensors, and missions
 
-
-
 ## 🧭 Purpose
 
 This simulation framework provides a structured, high-fidelity environment for the development and testing of UAV systems. It allows early-stage prototyping of guidance, navigation, and control (GNC) strategies in software before hardware deployment.
-
 
 ## 🏗️ System Architecture
 
 The architecture is modular and decoupled across distinct functional domains:
 
-
 Each module interfaces via a standardized shared data format, allowing independent upgrades and minimal coupling.
-
 
 ## 🧩 Module Breakdown
 
@@ -60,8 +53,6 @@ Each module interfaces via a standardized shared data format, allowing independe
 - **Outputs**: `simulation.csv`, `simulation.png`
     Note: developed for previous version not incorporated in this version
 
-
-
 ## 🔄 Simulation Flow
 
 The simulation integrates through `main.py`, which:
@@ -72,7 +63,6 @@ The simulation integrates through `main.py`, which:
 
 All data is exchanged through the dataclass objects defined in `Global/simdata.py`, ensuring synchronization across modules.
 
-
 ## 🚀 Key Features
 
 - ✅ 6-DOF Rigid Body Dynamics
@@ -81,7 +71,6 @@ All data is exchanged through the dataclass objects defined in `Global/simdata.p
 - ✅ Integrated **3D GUI visualization**
 - ✅ Logging and real-time plotting
 - 🔄 Implemention test modules for each modules - only available for GUI
-
 
 ## 📁 How to Run
 

@@ -1,7 +1,6 @@
 # simdata.py
 import numpy as np
 from dataclasses import dataclass, field
-from typing import Dict
 
 ########################################################################
 ################################### GCS ################################
@@ -37,10 +36,11 @@ class Waypoint_data_class:
 
 @dataclass
 class Radio_data_class:
-    radio_channel1: float = 0
-    radio_channel2: float = 0
-    radio_channel3: float = 0
-    radio_channel4: float = 0
+    channel1: float = 0
+    channel2: float = 0
+    channel3: float = 0
+    channel4: float = 0
+    mode_switch: str = "QD_MANUAL"
 
 
 @dataclass
@@ -50,17 +50,15 @@ class GCSData_class:
     """
 
     sim_command: str = ""
-    mode: str = "idle"
-    state: str = "idle"
+    mode: str = ""
     command: str = ""
 
     waypoint_data: Waypoint_data_class = field(
         default_factory=lambda: Waypoint_data_class()
     )
-    update_waypoints: bool = False
     current_waypoint: int = 0
 
-    radio_data: Radio_data_class = field(default_factory=Radio_data_class)
+    radio: Radio_data_class = field(default_factory=Radio_data_class)
 
 
 ########################################################################
@@ -117,6 +115,36 @@ class Controls_class:
 
     FW: FW_controls = field(default_factory=FW_controls)
     Quad: Quad_controls = field(default_factory=Quad_controls)
+
+
+@dataclass
+class controller_flags_class:
+    """
+    Controller flags
+    """
+
+    angle_controller: bool = False
+    angle_rate_controller: bool = False
+    throttle: bool = False
+    mode: str = ""
+
+
+@dataclass
+class Controller_reset_flags:
+    reset_pos_int_x: bool = False
+    reset_pos_int_y: bool = False
+    reset_vel_int_x: bool = False
+    reset_vel_int_y: bool = False
+    reset_pos_int_z: bool = False
+    reset_vel_int_z: bool = False
+
+    reset_angle_int_roll: bool = False
+    reset_angle_int_pitch: bool = False
+    reset_angle_rate_int_roll: bool = False
+    reset_angle_rate_int_pitch: bool = False
+
+    reset_angle_int_yaw: bool = False
+    reset_angle_rate_int_yaw: bool = False
 
 
 ########################################################################

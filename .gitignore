@@ -2,3 +2,5 @@
 __pycache__/
 myenv/
 .vscode
+flask_GUI
+*.csv

@@ -8,10 +8,10 @@ from vpython import *  # type: ignore
 import numpy as np
 from GUI.renderer import UAVRenderer
 from GUI.input_handler import GCSInput
-from Global.simdata import GCSData_class
+from Global.simdata import GCSData_class, Waypoint_data_class
 
 class UAVinterface:
-    def __init__(self,manual_control=False):
+    def __init__(self, GCS_data:GCSData_class, manual_control:bool=False):
         # Create the main scene for visualization
         self.scene = canvas(
             title="UAV 6DOF View with GCS Controls",
@@ -21,10 +21,9 @@ class UAVinterface:
             autoscale=False,
         )
         self.scene.select()
-        # rate(1)  # Set the rate for the main loop
 
         # Initialize UAV Renderer with manual control
-        self.GCS = GCSInput(scene=self.scene)
+        self.GCS = GCSInput(self.scene, GCS_data.waypoint_data)
         self.visual = UAVRenderer(scene = self.scene, manual_control = manual_control)
         self.output : GCSData_class
 
@@ -37,7 +36,7 @@ class UAVinterface:
 
 
 if __name__ == "__main__":
-    viz = UAVinterface(manual_control=True)
+    viz = UAVinterface(GCS_data=GCSData_class(), manual_control=True)
     data = viz.run()
     print(f"\r", end="")
     print(data)

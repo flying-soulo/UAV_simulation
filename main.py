@@ -1,11 +1,14 @@
 import time
-import numpy as np
-from Autonomy.Autopilot import UAVAutopilot
+import csv
+import pandas as pd
+from pathlib import Path
+
 from AeroVehicle.Vehicle_Sim import UAVSimulation
-from GUI.interface import UAVinterface
 from AeroVehicle.Vehicle_Properties import Aerosonde_vehicle
-from vpython import rate
+from Autonomy.Autopilot import UAVAutopilot
+from GUI.interface import UAVinterface
 from Global.simdata import UAVForce_class, UAVState_class, Actuator_class, GCSData_class, Waypoint_class
+
 
 class UAVSimulator:
     def __init__(self):
@@ -13,12 +16,13 @@ class UAVSimulator:
         self.freq = 100  # Hz
         self.dt = 1 / self.freq
 
-        # Waypoints: (x, y, z, speed, mode)
+        self.control_input : Actuator_class = Actuator_class()
         self.forces_moments : UAVForce_class = UAVForce_class()
-        self.Actuators : Actuator_class = Actuator_class()
         self.current_state : UAVState_class = UAVState_class()
         self.update_step : UAVState_class = UAVState_class()
         self.GCS_data : GCSData_class = GCSData_class()
+
+        # GCS data initialization
         self.GCS_data.waypoint_data.home = Waypoint_class(x = 1000, y = 1000, z = -1000, heading = 0, action = "reach", mode = "Auto", next = 0)
         self.GCS_data.waypoint_data.waypoints[0] = Waypoint_class(x = 3000, y = 1000, z = -1000, heading = 0, action = "reach", mode = "Auto", next = 1)
         self.GCS_data.waypoint_data.waypoints.append(Waypoint_class(x = 3000, y = 3000, z = -1000, heading = 0, action = "reach", mode = "Auto", next = 2))
@@ -33,9 +37,16 @@ class UAVSimulator:
         self.vehicle_prop = Aerosonde_vehicle.copy()
         self.simulation = UAVSimulation(self.vehicle_prop, self.dt)
         self.autopilot = UAVAutopilot(self.GCS_data, self.dt)
-        self.interface = UAVinterface()
+        self.interface = UAVinterface(self.GCS_data)
+        self.data_log = []
 
     def restart(self):
+        # Save the log
+        df = pd.DataFrame(self.data_log)
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = f"logger/simulation_{timestamp}.csv"
+        df.to_csv(filename, index=False)
+
         # Reset only the backend simulation components
         self.GCS_data = GCSData_class()
         self.forces_moments = UAVForce_class()
@@ -48,57 +59,121 @@ class UAVSimulator:
         self.current_state.x_vel = 30
 
         # Reset vehicle, autopilot, and simulation logic (not GUI)
-        self.vehicle_prop = Aerosonde_vehicle.copy()
         self.simulation = UAVSimulation(self.vehicle_prop, self.dt)
         self.autopilot = UAVAutopilot(self.GCS_data, self.dt)
 
+        # reset data log
+        self.data_log = []
+
+    def _simulate_step(self):
+        self.control_input = self.autopilot.run(self.current_state, self.GCS_data)
+        self.update_step, self.forces_moments = self.simulation.simulate_one_step(
+            self.current_state, self.control_input
+        )
+        self.interface.update_uav_visual(self.update_step)
+        self.current_state = self.update_step
+
+    def _generate_log_entry(self):
+        return {
+            "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+
+            "x": self.current_state.x,
+            "y": self.current_state.y,
+            "z": self.current_state.z,
+            "x_vel": self.current_state.x_vel,
+            "y_vel": self.current_state.y_vel,
+            "z_vel": self.current_state.z_vel,
+            "phi": self.current_state.phi,
+            "theta": self.current_state.theta,
+            "psi": self.current_state.psi,
+            "phi_rate": self.current_state.phi_rate,
+            "theta_rate": self.current_state.theta_rate,
+            "psi_rate": self.current_state.psi_rate,
+            "airspeed": self.current_state.airspeed,
+            "flight_mode": self.current_state.flight_mode,
+            "systemArmed": self.current_state.systemArmed,
+
+            "throttle": self.control_input.FW.throttle,
+            "aileron": self.control_input.FW.aileron,
+            "elevator": self.control_input.FW.elevator,
+            "rudder": self.control_input.FW.rudder,
+
+            "Motor1": self.control_input.Quad.Motor1,
+            "Motor2": self.control_input.Quad.Motor2,
+            "Motor3": self.control_input.Quad.Motor3,
+            "Motor4": self.control_input.Quad.Motor4,
+
+            "lift": self.forces_moments.lift,
+            "drag": self.forces_moments.drag,
+            "Fx": self.forces_moments.Fx,
+            "Fy": self.forces_moments.Fy,
+            "Fz": self.forces_moments.Fz,
+            "l_moment": self.forces_moments.l_moment,
+            "m_moment": self.forces_moments.m_moment,
+            "n_moment": self.forces_moments.n_moment,
+        }
+
+    def _log_header(self):
+        return [
+            "time", "x", "y", "z", "x_vel", "y_vel", "z_vel", "phi", "theta", "psi",
+            "phi_rate", "theta_rate", "psi_rate", "airspeed", "flight_mode", "systemArmed",
+            "throttle", "aileron", "elevator", "rudder",
+            "Motor1", "Motor2", "Motor3", "Motor4",
+            "lift", "drag", "Fx", "Fy", "Fz", "l_moment", "m_moment", "n_moment"
+        ]
+
     def run_simulation(self):
-        runsim = False
+        self.runsim = False
+        log_path = Path("logger")
+        log_path.mkdir(parents=True, exist_ok=True)
 
-        while True:
-            self.GCS_data = self.interface.run()
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = log_path / f"simulation_{timestamp}.csv"
 
+        # Write CSV header only once
+        with open(filename, mode='w', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=self._log_header())
+            writer.writeheader()
 
-            match (self.GCS_data.sim_command):
-                case "start":
-                    runsim = True
-                    self.GCS_data.mode = "Auto"
+            while True:
+                self.GCS_data = self.interface.run()
 
-                case "pause":
-                    runsim = False
+                match self.GCS_data.sim_command:
+                    case "START":
+                        self.runsim = True
+                        self.GCS_data.mode = "Auto"
 
-                case "reset":
-                    self.restart()
-                    runsim = False
+                    case "PAUSE":
+                        self.runsim = False
+                        continue
+
+                    case "RESET":
+                        self.restart()
+                        self.runsim = False
+                        continue
+
+                    case "STOP":
+                        self.runsim = False
+                        break
+
+                if not self.runsim:
                     continue
 
-                case "stop":
-                    break
+                start_time = time.time()
 
-            if runsim:
-                # Autopilot computes actuator commands
-                control_input = self.autopilot.run(self.current_state, self.GCS_data)
+                try:
+                    self._simulate_step()
+                    log_entry = self._generate_log_entry()
+                    writer.writerow(log_entry)
+                except Exception as e:
+                    print(f"[ERROR] Simulation step failed: {e}")
+                    self.runsim = False
+                    continue
 
-                # Simulate one step
-                self.update_step, self.forces_moments = self.simulation.simulate_one_step(self.current_state, control_input)
-
-                # Visual update
-                self.interface.update_uav_visual(self.update_step)
-
-                # Step update
-                self.current_state = self.update_step
-            rate(self.freq)
-
-        # # Save to CSV
-        # df = pd.DataFrame(self.simulation_data)
-        # df.to_csv("logger/simulation.csv", index=False)
-
-
-def main():
-    sim = UAVSimulator()
-    sim.run_simulation()
-    # rate(sim.freq)
-
+                elapsed = time.time() - start_time
+                sleep_time = max(0, (1.0 / self.freq) - elapsed)
+                time.sleep(sleep_time)
 
 if __name__ == "__main__":
-    main()
+    sim = UAVSimulator()
+    sim.run_simulation()

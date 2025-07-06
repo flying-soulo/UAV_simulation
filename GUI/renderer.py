@@ -6,11 +6,11 @@ from GUI.aircraft import Aircraft
 from Global.simdata import UAVState_class
 
 
-def make_sliders(scene, callback):
+def make_sliders(scene:canvas, callback):
     labels = [
         ("North (m)", -1000, 1000, 0, "north"),
         ("East (m)", -1000, 1000, 0, "east"),
-        ("Down (m)", -1000, 1000, 0, "down"),
+        ("Down (m)", -1000, 1000, -100, "down"),
         ("Roll (°)", -90, 90, 0, "roll"),
         ("Pitch (°)", -90, 90, 0, "pitch"),
         ("Yaw (°)", -180, 180, 0, "yaw"),
@@ -25,7 +25,7 @@ def make_sliders(scene, callback):
 
 
 class UAVRenderer:
-    def __init__(self, scene, manual_control=False):
+    def __init__(self, scene:canvas, manual_control=False):
         self.scene = scene
         self.scene.select()
 

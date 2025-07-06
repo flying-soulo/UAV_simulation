@@ -20,7 +20,7 @@ def wrap(value, min_val, max_val):
     return (value - min_val) % range_size + min_val
 
 #----------------Linear Scaling------------------
-def linear_scale(x, in_min, in_max, out_min, out_max):
+def linear_scale(input:float, in_min:float, in_max:float, out_min:float, out_max:float):
     """
     Linearly scale x from range [in_min, in_max] to [out_min, out_max].
 
@@ -38,10 +38,10 @@ def linear_scale(x, in_min, in_max, out_min, out_max):
         raise ValueError("Input range cannot be zero (in_min == in_max)")
 
     # Clamp input to avoid extrapolation if needed
-    x = np.clip(x, in_min, in_max)
+    input = np.clip(input, in_min, in_max)
 
     # Linear scaling formula
-    scaled = (x - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
+    scaled = (input - in_min) / (in_max - in_min) * (out_max - out_min) + out_min
     return scaled
 
 

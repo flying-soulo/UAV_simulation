@@ -1,16 +1,15 @@
 # Autonomy/Controller/fw_controller.py
 import numpy as np
 from .PID import PID_class
-from .guidance import Guidance
+from .guidance import FW_guidance
 from Global.utils import linear_scale
-from Global.simdata import Mission_track_data, UAVState_class, FW_controls, FW_target
-
+from Global.simdata import UAVState_class, FW_controls, FW_target, controller_flags_class
 
 class FixedWingController:
     def __init__(self, dt, TECS_control: bool = False):
         self.dt = dt
         self.TECS_control = TECS_control
-        self.guidance = Guidance()
+        self.guidance = FW_guidance()
         self.target: FW_target = FW_target()
         self.output: FW_controls = FW_controls()
         self._init_pids()
@@ -77,13 +76,9 @@ class FixedWingController:
 
         return np.clip(throttle_cmd, 0, 100), np.clip(pitch_cmd, -30, 30)
 
-    def run(self, current_state: UAVState_class, Mission_data: Mission_track_data):
-        # Step 1: Run Guidance Law
-        self.target = self.guidance.compute_guidance(
-            waypoint_data = Mission_data,
-            position=np.array([current_state.x, current_state.y]),
-            velocity=np.array([current_state.x_vel, current_state.y_vel]),
-        )
+    def run(self, current_state: UAVState_class, target: FW_target, controller_flags:controller_flags_class)-> FW_controls:
+        # extract the target data
+        self.target = target
 
         # Step 2 - Roll controls loop
         roll_cmd = self.pids["roll"].run_pid(
@@ -109,16 +104,19 @@ class FixedWingController:
 
         else:
             # --- Vertical Control: Altitude → Pitch → Pitch Rate ---
-            pitch_cmd = self.pids["altitude"].run_pid(self.target.altitude, current_state.z, self.dt)
-            pitch_rate_cmd = self.pids["pitch"].run_pid(pitch_cmd, current_state.theta, self.dt)
-            self.output.elevator = -self.pids["pitch_rate"].run_pid(pitch_rate_cmd, current_state.theta_rate, self.dt)
+            pitch_cmd = self.pids["altitude"].run_pid(
+                self.target.altitude, current_state.z, self.dt
+            )
+            pitch_rate_cmd = self.pids["pitch"].run_pid(
+                pitch_cmd, current_state.theta, self.dt
+            )
+            self.output.elevator = -self.pids["pitch_rate"].run_pid(
+                pitch_rate_cmd, current_state.theta_rate, self.dt
+            )
 
             # --- Throttle Control: Airspeed loop ---
-            self.output.throttle = (
-                self.pids["airspeed"].run_pid(
-                    self.target.airspeed, current_state.x_vel, self.dt
-                )
-                + 60.0
+            self.output.throttle = self.pids["airspeed"].run_pid(
+                self.target.airspeed, current_state.x_vel, self.dt
             )
 
         return self.output
