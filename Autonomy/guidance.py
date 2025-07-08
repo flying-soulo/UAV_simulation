@@ -1,21 +1,21 @@
 import numpy as np
-from Global.simdata import FW_target, Mission_track_data
+from Global.simdata import FW_target, Mission_track_data, UAVState_class
 
 class FW_guidance:
-    def __init__(self, min_L1_dist=300.0, L1_ratio=1.5, default_airspeed=30.0):
+    def __init__(self, min_L1_dist:float=300.0, L1_ratio:float=1.5, default_airspeed:float=30.0):
         self.min_L1_dist = min_L1_dist
         self.L1_ratio = L1_ratio
         self.default_airspeed = default_airspeed
 
     def get_L1_distance(self, v):
-        gs = np.linalg.norm(v)
-        return max(float(self.L1_ratio * gs), self.min_L1_dist)
+        gs = float(np.linalg.norm(v))
+        return max(self.L1_ratio * gs, self.min_L1_dist)
 
-    def run(self, state, mission_track: Mission_track_data) -> FW_target:
+    def run(self, state: UAVState_class, mission_track: Mission_track_data) -> FW_target:
         prev = mission_track.prev_wp
         curr = mission_track.curr_wp
         pos = np.array([state.x, state.y])
-        vel = np.array([state.vx, state.vy])
+        vel = np.array([state.x_vel, state.y_vel])
 
         path_vec = np.array([curr.x - prev.x, curr.y - prev.y])
         path_unit = path_vec / (np.linalg.norm(path_vec) + 1e-6)

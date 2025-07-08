@@ -22,12 +22,12 @@ else:
     logging.basicConfig(
         filename="logger/gcs_debug.log",
         level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s"
+        format="%(asctime)s - %(levelname)s - %(message)s",
     )
 
 
 class GCSInput:
-    def __init__(self, scene: canvas, waypoint_data:Waypoint_data_class):
+    def __init__(self, scene: canvas, waypoint_data: Waypoint_data_class):
         self.scene = scene
         self.scene.select()
 
@@ -35,11 +35,12 @@ class GCSInput:
         self.GCS_data: GCSData_class = GCSData_class()
         self.radio: Radio_data_class = Radio_data_class()
 
-        self.cmd_buttons = {}
+        self.sim_cmd_buttons = {}
+        self.AC_cmd_buttons = {}
         self.mode_buttons = {}
         self.waypoint_buttons = {}
 
-        self.previous_mode : str = "AUTO"
+        self.previous_mode: str = "AUTO"
         self.create_controls()
         self.scene.bind("keydown", self.radio_control_input)
 
@@ -76,30 +77,50 @@ class GCSInput:
     def create_sim_command_inputs(self):
         self.scene.append_to_caption("\n              SIM COMMANDS              \n")
         for m in ["START", "PAUSE", "RESET", "STOP"]:
-            self.cmd_buttons[m] = button(text=m.upper(),bind=lambda _, m=m: (setattr(self.GCS_data, 'sim_command', m), self.update_button_colors(m, self.cmd_buttons)))
+            self.sim_cmd_buttons[m] = button(
+                text=m.upper(),
+                bind=lambda _, m=m: (
+                    setattr(self.GCS_data, "sim_command", m),
+                    self.update_button_colors(m, self.sim_cmd_buttons),
+                ),
+            )
             self.scene.append_to_caption(" ")
 
     def create_gcs_command_inputs(self):
         self.scene.append_to_caption("\n         GCS COMMANDS                 \n")
-        for mode in ["ARM", "LAUNCH", "ABORT", "DISARM", "LAND"]:
-            self.mode_buttons[mode] = button(text=mode.upper(),bind= self.set_gcs_command(mode))
+        for command in ["ARM", "LAUNCH", "ABORT", "DISARM", "LAND"]:
+            self.AC_cmd_buttons[command] = button(
+                text=command.upper(),
+                bind=lambda _, m=command: (
+                    setattr(self.GCS_data, "sim_command", m),
+                    self.update_button_colors(m, self.AC_cmd_buttons),
+                ),
+            )
             self.scene.append_to_caption(" ")
 
-    def set_gcs_command(self, mode:str):
+    def set_gcs_command(self, mode: str):
 
         self.update_button_colors(mode, self.mode_buttons)
 
     def create_mode_inputs(self):
         self.scene.append_to_caption("\n         MODES                 \n")
-        for m in ["AUTO", "QD ALTHOLD", "QD POSHOLD", "MANUAL"]:
-            self.mode_buttons[m] = button(text=m.upper(),bind=lambda _, m=m: (setattr(self.GCS_data, 'mode', m), self.update_button_colors(m, self.mode_buttons)))
+        for mode in ["AUTO", "QD ALTHOLD", "QD POSHOLD", "MANUAL"]:
+            self.mode_buttons[mode] = button(
+                text=mode.upper(),
+                bind=lambda _, m=mode: (
+                    setattr(self.GCS_data, "mode", m),
+                    self.update_button_colors(m, self.mode_buttons),
+                ),
+            )
             self.scene.append_to_caption(" ")
 
     def create_waypoint_inputs(self):
         self.scene.append_to_caption("  \n")
         self.scene.append_to_caption("\n        SET WAYPOINT        \n")
         self.scene.append_to_caption("index: ")
-        self.waypoint_index_input = menu(text="index", choices=["home", 0, 1, 2, 3, 4], bind=self.show_input_waypoint)
+        self.waypoint_index_input = menu(
+            text="index", choices=["home", 0, 1, 2, 3, 4], bind=self.show_input_waypoint
+        )
 
         self.scene.append_to_caption(" x (in m): ")
         self.waypoint_buttons["x"] = winput(bind=None)
@@ -114,19 +135,32 @@ class GCSInput:
         self.waypoint_buttons["heading"] = winput(bind=None)
 
         self.scene.append_to_caption(" Action: ")
-        self.waypoint_buttons["action"] = menu(text=" Waypoint", choices=["reach", "hover", "loiter"], bind=self.show_input_waypoint)
+        self.waypoint_buttons["action"] = menu(
+            text=" Waypoint",
+            choices=["reach", "hover", "loiter"],
+            bind=self.show_input_waypoint,
+        )
 
         self.scene.append_to_caption(" Mode: ")
-        self.waypoint_buttons["mode"] = menu(text=" Waypoint", choices=["Auto", "Quad", "FW"], bind=self.show_input_waypoint)
+        self.waypoint_buttons["mode"] = menu(
+            text=" Waypoint",
+            choices=["Auto", "Quad", "FW"],
+            bind=self.show_input_waypoint,
+        )
 
         self.scene.append_to_caption(" next ")
-        self.waypoint_buttons["next"] = menu(text=" next: ", choices=["home", 0, 1, 2, 3, 4], bind=None)
+        self.waypoint_buttons["next"] = menu(
+            text=" next: ", choices=["home", 0, 1, 2, 3, 4], bind=None
+        )
 
         self.scene.append_to_caption(" ")
         self.set_wp_button = button(text="save Waypoint", bind=self.set_waypoint)
 
         self.scene.append_to_caption("  ")
-        self.upload_waypoint_button = button(text="Upload waypoints", bind=lambda: setattr(self.GCS_data, 'upload_waypoints', True))
+        self.upload_waypoint_button = button(
+            text="Upload waypoints",
+            bind=lambda: setattr(self.GCS_data, "upload_waypoints", True),
+        )
 
     def show_input_waypoint(self):
         wp = self.waypoint_index_input.selected
@@ -164,7 +198,7 @@ class GCSInput:
                 heading=float(self.waypoint_buttons["heading"].text),
                 mode=self.waypoint_buttons["mode"].text,
                 action=self.waypoint_buttons["action"].text,
-                next=self.waypoint_buttons["next"].text
+                next=self.waypoint_buttons["next"].text,
             )
 
             if wp_id == "home":
@@ -182,7 +216,9 @@ class GCSInput:
             self.set_wp_button.color = color.white
             self.scene.select()
 
-    def update_button_colors(self, active_key, button_dict: dict, highlight=color.green):
+    def update_button_colors(
+        self, active_key, button_dict: dict, highlight=color.green
+    ):
         for key, btn in button_dict.items():
             target_color = highlight if key == active_key else color.gray(0.7)
             if btn.background != target_color:
@@ -190,12 +226,14 @@ class GCSInput:
 
     def create_controls(self):
         self.create_sim_command_inputs()
+        self.create_gcs_command_inputs()
         self.create_mode_inputs()
         self.create_waypoint_inputs()
 
     def run(self):
         self.GCS_data.radio = self.radio
         return self.GCS_data
+
 
 # def main():
 #     scene.title = "GCS Input Test"

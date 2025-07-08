@@ -1,7 +1,6 @@
 # Autonomy/Controller/fw_controller.py
 import numpy as np
-from .PID import PID_class
-from .guidance import FW_guidance
+from Autonomy.PID import PID_class
 from Global.utils import linear_scale
 from Global.simdata import UAVState_class, FW_controls, FW_target, controller_flags_class
 
@@ -9,7 +8,6 @@ class FixedWingController:
     def __init__(self, dt, TECS_control: bool = True):
         self.dt = dt
         self.TECS_control = TECS_control
-        self.guidance = FW_guidance()
         self.target: FW_target = FW_target()
         self.output: FW_controls = FW_controls()
         self._init_pids()

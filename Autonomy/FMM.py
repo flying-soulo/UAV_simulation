@@ -5,7 +5,7 @@ from Autonomy.AutoNavigation import AutoNavigation
 class Flight_Mode_manager:
     def __init__(self, GCS_data: GCSData_class):
         self.navigator = WaypointNavigator()
-        self.auto_nav = AutoNavigation(GCS_data.waypoint_data)
+        self.auto_nav = AutoNavigation()
         self.controller_flags = controller_flags_class()
         self.target_output = Target_data_struct()
 
