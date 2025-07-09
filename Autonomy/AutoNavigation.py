@@ -3,7 +3,7 @@ from Autonomy.guidance import FW_guidance
 from Autonomy.Path_planning import WaypointNavigator
 
 class AutoNavigation:
-    def __init__(self, waypoint_data: Waypoint_data_class, L1dist=50, takeoff_altitude=10):
+    def __init__(self, L1dist=300, takeoff_altitude=10):
         self.guidance = FW_guidance(min_L1_dist=L1dist)
         self.takeoff_alt = takeoff_altitude
         self.flags = controller_flags_class()
@@ -24,7 +24,7 @@ class AutoNavigation:
             self.flags.mode = "SHUTDOWN"
             return output, self.flags
 
-        match cmd:
+        match cmd.upper():
             case "LAUNCH":
                 if not self._takeoff_done:
                     if state.z <= -self.takeoff_alt:

@@ -4,3 +4,4 @@ myenv/
 .vscode
 flask_GUI
 *.csv
+logger/logs

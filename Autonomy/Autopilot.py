@@ -31,10 +31,8 @@ class UAVAutopilot:
 
 
     def run(self, current_state: UAVState_class, GCSdata: GCSData_class):
-        """Main funciton which calculated the controls outputs for the autopilot
-
-        Returns:
-            control output: outputs the controls values for the UAV
+        """
+        Main funciton which calculated the Actuator outputs for the autopilot
         """
 
         nav_target, controller_flags = self.FMM.run(GCSdata, current_state)

@@ -2,6 +2,7 @@ import time
 import csv
 import pandas as pd
 from pathlib import Path
+from datetime import datetime
 
 from AeroVehicle.Vehicle_Sim import UAVSimulation
 from AeroVehicle.Vehicle_Properties import Aerosonde_vehicle
@@ -67,15 +68,14 @@ class UAVSimulator:
 
     def _simulate_step(self):
         self.control_input = self.autopilot.run(self.current_state, self.GCS_data)
-        self.update_step, self.forces_moments = self.simulation.simulate_one_step(
-            self.current_state, self.control_input
-        )
+        self.update_step, self.forces_moments = self.simulation.simulate_one_step(self.current_state, self.control_input)
         self.interface.update_uav_visual(self.update_step)
         self.current_state = self.update_step
 
     def _generate_log_entry(self):
         return {
-            "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
 
             "x": self.current_state.x,
             "y": self.current_state.y,
@@ -124,7 +124,7 @@ class UAVSimulator:
 
     def run_simulation(self):
         self.runsim = False
-        log_path = Path("logger")
+        log_path = Path("logger/logs")
         log_path.mkdir(parents=True, exist_ok=True)
 
         timestamp = time.strftime("%Y%m%d_%H%M%S")

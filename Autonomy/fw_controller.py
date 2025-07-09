@@ -6,7 +6,7 @@ from Global.utils import linear_scale
 from Global.simdata import UAVState_class, FW_controls, FW_target, controller_flags_class
 
 class FixedWingController:
-    def __init__(self, dt, TECS_control: bool = False):
+    def __init__(self, dt, TECS_control: bool = True):
         self.dt = dt
         self.TECS_control = TECS_control
         self.guidance = FW_guidance()
