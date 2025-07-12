@@ -1,8 +1,8 @@
 import numpy as np
-from Global.simdata import FW_target, Mission_track_data, UAVState_class
+from Global.simdata import FWTarget, MissionTrack, UAVState
 
 class FW_guidance:
-    def __init__(self, min_L1_dist:float=300.0, L1_ratio:float=1.5, default_airspeed:float=30.0):
+    def __init__(self, min_L1_dist:float=300.0, L1_ratio:float=1.5, default_airspeed:float=23.0):
         self.min_L1_dist = min_L1_dist
         self.L1_ratio = L1_ratio
         self.default_airspeed = default_airspeed
@@ -11,9 +11,9 @@ class FW_guidance:
         gs = float(np.linalg.norm(v))
         return max(self.L1_ratio * gs, self.min_L1_dist)
 
-    def run(self, state: UAVState_class, mission_track: Mission_track_data) -> FW_target:
-        prev = mission_track.prev_wp
-        curr = mission_track.curr_wp
+    def run(self, state: UAVState, mission_track: MissionTrack) -> FWTarget:
+        prev = mission_track.previous
+        curr = mission_track.target
         pos = np.array([state.x, state.y])
         vel = np.array([state.x_vel, state.y_vel])
 
@@ -32,4 +32,4 @@ class FW_guidance:
         g = 9.81
         roll = np.arctan2(a_lat, g)
 
-        return FW_target(roll=roll, altitude=curr.z, airspeed=self.default_airspeed)
+        return FWTarget(roll=roll, altitude=curr.z, airspeed=self.default_airspeed)

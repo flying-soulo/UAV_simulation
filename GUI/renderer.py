@@ -3,7 +3,7 @@ import numpy as np
 from GUI.data_transform import ned_to_eus
 from GUI.environment import Environment
 from GUI.aircraft import Aircraft
-from Global.simdata import UAVState_class
+from Global.simdata import UAVState
 
 
 def make_sliders(scene:canvas, callback):
@@ -65,7 +65,7 @@ class UAVRenderer:
             self.cam_distance = min(200.0, self.cam_distance + self.zoom_sensitivity)
             self.cam_height = min(100.0, self.cam_height + 0.5 * self.zoom_sensitivity)
 
-    def update_from_state(self, state: UAVState_class):
+    def update_from_state(self, state: UAVState):
         pos_ned = np.array([state.x, state.y, state.z])
         orient_deg = np.degrees([state.psi, state.theta, state.phi])  # ZYX order
 
@@ -82,7 +82,7 @@ class UAVRenderer:
 
         self.show_telemetry(state)
 
-    def show_telemetry(self, state: UAVState_class):
+    def show_telemetry(self, state: UAVState):
         angles_deg = np.rad2deg([state.phi, state.theta, state.psi])
         rates_dps = np.rad2deg([state.phi_rate, state.theta_rate, state.psi_rate])
 
@@ -108,7 +108,7 @@ class UAVRenderer:
             return
 
         # Build state manually
-        state = UAVState_class(
+        state = UAVState(
             x=self.sliders["north"].value,
             y=self.sliders["east"].value,
             z=self.sliders["down"].value,

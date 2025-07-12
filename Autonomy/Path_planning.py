@@ -1,24 +1,24 @@
 import numpy as np
-from Global.simdata import Mission_track_data, UAVState_class, Waypoint_data_class
+from Global.simdata import UAVState, Waypoint, GCSData, MissionTrack
+
 
 class WaypointNavigator:
     def __init__(self):
-        self.track: Mission_track_data = Mission_track_data()
         self.index: int = 0
         self.timer: int = 0
+        self.track = MissionTrack()  # Initialize properly
 
-    def should_advance(self, state: UAVState_class, wp, mode: str) -> bool:
-        dist = float(np.linalg.norm([
-            wp.x - state.x,
-            wp.y - state.y,
-            wp.z - state.z
-        ]))
+    def _distance_to_wp(self, state: UAVState, wp: Waypoint) -> float:
+        return float(np.linalg.norm([wp.x - state.x, wp.y - state.y, wp.z - state.z]))
+
+    def should_advance(self, state: UAVState, wp: Waypoint, mode: str) -> bool:
+        dist = self._distance_to_wp(state, wp)
 
         if mode == "FW":
-            return dist < 120
+            return dist < 120.0
 
         elif mode == "QD":
-            if dist < 5:
+            if dist < 5.0:
                 self.timer += 1
             else:
                 self.timer = 0
@@ -26,21 +26,27 @@ class WaypointNavigator:
 
         return False
 
-    def update(self, state: UAVState_class, wp_data: Waypoint_data_class, mode: str) -> Mission_track_data:
-        if self.index >= len(wp_data.waypoints):
-            return self.track  # Mission finished or invalid
+    def update(self, state: UAVState, gcs_data: GCSData) -> MissionTrack:
+        mission = gcs_data.mission
+        waypoints = mission.waypoints
 
-        current_wp = wp_data.waypoints[self.index]
+        # No valid mission
+        if not waypoints or self.index >= len(waypoints):
+            return self.track
 
-        # Check whether to advance to the next waypoint
-        if self.should_advance(state, current_wp, mode):
+        current_wp = waypoints[self.index]
+
+        if self.should_advance(state, current_wp, gcs_data.mode):
             next_idx = current_wp.next
-            if 0 <= next_idx < len(wp_data.waypoints):
+            if 0 <= next_idx < len(waypoints):
                 self.index = next_idx
+            else:
+                # Restart mission or hold last wp
+                self.index = 0
 
-        # Update track
-        self.track.curr_wp = wp_data.waypoints[self.index]
-        prev_idx = max(self.index - 1, 0)
-        self.track.prev_wp = wp_data.waypoints[prev_idx]
-
+        # Update mission track with current & previous waypoints
+        self.track.previous = waypoints[max(self.index - 1, 0)]
+        self.track.target = waypoints[self.index]
+        mission.current_index = self.index  # Update mission state
+        GCSData.mission.update_track()
         return self.track

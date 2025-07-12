@@ -1,6 +1,5 @@
-# simdata.py
-import numpy as np
 from dataclasses import dataclass, field
+from typing import List
 
 ########################################################################
 ################################### GCS ################################
@@ -8,71 +7,71 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class Waypoint_class:
-    """
-    waypoint structure with x y z target locations, heading, action, mode, notes(extra)
-    """
-
+class Waypoint:
     x: float = 0
     y: float = 0
     z: float = 0
-
     heading: float = 0
-
     action: str = ""
     mode: str = ""
     next: int = 1
 
 
 @dataclass
-class Waypoint_data_class:
-    """
-    Contains all the waypoints of the simulation
-    """
-
-    home: Waypoint_class = field(default_factory=Waypoint_class)
-    waypoints: list[Waypoint_class] = field(default_factory=lambda: [Waypoint_class()])
-
-
-@dataclass
-class Radio_data_class:
-    channel1: float = 0
-    channel2: float = 0
-    channel3: float = 0
-    channel4: float = 0
+class RCInput:
+    roll: float = 0
+    pitch: float = 0
+    throttle: float = 0
+    yaw: float = 0
     mode_switch: str = "QD_MANUAL"
 
 
 @dataclass
-class GCSData_class:
-    """
-    GCS data structure which has all the data from the GCS
-    """
-
-    sim_command: str = ""
-    mode: str = ""
-    command: str = ""
-
-    waypoint_data: Waypoint_data_class = field(
-        default_factory=lambda: Waypoint_data_class()
-    )
-    current_waypoint: int = 0
-
-    radio: Radio_data_class = field(default_factory=Radio_data_class)
+class MissionTrack:
+    target: Waypoint = field(default_factory=Waypoint)
+    previous: Waypoint = field(default_factory=Waypoint)
 
 
-########################################################################
-############################### Autopilot ##############################
-########################################################################
 @dataclass
-class FW_target:
+class MissionPlan:
+    home: Waypoint = field(default_factory=Waypoint)
+    waypoints: List[Waypoint] = field(default_factory=list)
+    current_index: int = 0
+    previous_index: int = 0
+    track: MissionTrack = field(default_factory=MissionTrack)
+
+    def update_track(self):
+        if self.waypoints:
+            self.previous_index = int(self.waypoints[self.current_index].next)
+            if 0 <= self.current_index < len(self.waypoints):
+                self.track.previous = self.waypoints[self.current_index]
+            if 0 <= self.previous_index < len(self.waypoints):
+                self.track.target = self.waypoints[self.previous_index]
+
+
+@dataclass
+class GCSData:
+    sim_command: str = "NONE"  # START, PAUSE, STOP
+    mode: str = "NONE"  # AUTO, STABILIZE, etc.
+    command: str = "NONE"  # ARM, DISARM, etc.
+    rc: RCInput = field(default_factory=RCInput)
+    mission: MissionPlan = field(default_factory=MissionPlan)
+
+
+########################################################################
+################################### GCS ################################
+########################################################################
+
+
+@dataclass
+class FWTarget:
     roll: float = 0
-    altitude: float = 0
     airspeed: float = 0
+    altitude: float = 0
 
 
 @dataclass
-class Quad_target:
+class QuadTarget:
     x: float = 0
     y: float = 0
     altitude: float = 0
@@ -80,19 +79,21 @@ class Quad_target:
 
 
 @dataclass
-class Target_data_struct:
-    Quad: Quad_target = field(default_factory=Quad_target)
-    FW: FW_target = field(default_factory=FW_target)
+class TargetSetpoints:
+    quad: QuadTarget = field(default_factory=QuadTarget)
+    fw: FWTarget = field(default_factory=FWTarget)
 
 
 @dataclass
-class Mission_track_data:
-    curr_wp: Waypoint_class = field(default_factory=Waypoint_class)
-    prev_wp: Waypoint_class = field(default_factory=Waypoint_class)
+class FWControlOutputs:
+    throttle: float = 0
+    aileron: float = 0
+    elevator: float = 0
+    rudder: float = 0
 
 
 @dataclass
-class Quad_controls:
+class QuadControlOutputs:
     throttle: float = 0
     roll: float = 0
     pitch: float = 0
@@ -100,93 +101,48 @@ class Quad_controls:
 
 
 @dataclass
-class FW_controls:
-    throttle: float = 0
-    aileron: float = 0
-    elevator: float = 0
-    rudder: float = 0
+class ControlOutputs:
+    fw: FWControlOutputs = field(default_factory=FWControlOutputs)
+    quad: QuadControlOutputs = field(default_factory=QuadControlOutputs)
 
 
 @dataclass
-class Controls_class:
-    """
-    contains the controller ouputs from Autopilot
-    """
-
-    FW: FW_controls = field(default_factory=FW_controls)
-    Quad: Quad_controls = field(default_factory=Quad_controls)
+class ControllerFlags:
+    angle_ctrl_enabled: bool = False
+    angle_rate_ctrl_enabled: bool = False
+    throttle_enabled: bool = False
+    current_mode: str = ""
 
 
 @dataclass
-class controller_flags_class:
-    """
-    Controller flags
-    """
-
-    angle_controller: bool = False
-    angle_rate_controller: bool = False
-    throttle: bool = False
-    mode: str = ""
-
-
-@dataclass
-class Controller_reset_flags:
-    reset_pos_int_x: bool = False
-    reset_pos_int_y: bool = False
-    reset_vel_int_x: bool = False
-    reset_vel_int_y: bool = False
-    reset_pos_int_z: bool = False
-    reset_vel_int_z: bool = False
-
-    reset_angle_int_roll: bool = False
-    reset_angle_int_pitch: bool = False
-    reset_angle_rate_int_roll: bool = False
-    reset_angle_rate_int_pitch: bool = False
-
-    reset_angle_int_yaw: bool = False
-    reset_angle_rate_int_yaw: bool = False
+class ControllerResetFlags:
+    reset_int: dict = field(
+        default_factory=lambda: {
+            "pos_x": False,
+            "pos_y": False,
+            "pos_z": False,
+            "vel_x": False,
+            "vel_y": False,
+            "vel_z": False,
+            "angle_roll": False,
+            "angle_pitch": False,
+            "angle_yaw": False,
+            "rate_roll": False,
+            "rate_pitch": False,
+            "rate_yaw": False,
+        }
+    )
 
 
 ########################################################################
-############################## Simulation ##############################
+################################### GCS ################################
 ########################################################################
-@dataclass
-class Quad_actuator:
-    Motor1: float = 0
-    Motor2: float = 0
-    Motor3: float = 0
-    Motor4: float = 0
 
 
 @dataclass
-class FW_actuator:
-    throttle: float = 0
-    aileron: float = 0
-    elevator: float = 0
-    rudder: float = 0
-
-
-@dataclass
-class Actuator_class:
-    """
-    Data class for the values of the UAV control values
-    """
-
-    # QUad controls
-    Quad: Quad_actuator = field(default_factory=Quad_actuator)
-
-    # FW Controls
-    FW: FW_actuator = field(default_factory=FW_actuator)
-
-
-@dataclass
-class UAVState_class:
-    """
-    State variables of the UAV
-    """
-
-    systemArmed = bool = False
-    flight_mode = str = "idle"
+class UAVState:
+    armed: bool = False
+    flight_mode: str = "IDLE"
 
     x: float = 0
     y: float = 0
@@ -196,9 +152,9 @@ class UAVState_class:
     y_vel: float = 0
     z_vel: float = 0
 
-    phi: float = 0
-    theta: float = 0
-    psi: float = 0
+    phi: float = 0  # roll
+    theta: float = 0  # pitch
+    psi: float = 0  # yaw
 
     phi_rate: float = 0
     theta_rate: float = 0
@@ -208,21 +164,39 @@ class UAVState_class:
 
 
 @dataclass
-class UAVForce_class:
-    """
-    Force values realted to the simulation
-    """
+class QuadActuators:
+    motor1: float = 0
+    motor2: float = 0
+    motor3: float = 0
+    motor4: float = 0
 
-    # Aerodynamics forces
+
+@dataclass
+class FWActuators:
+    throttle: float = 0
+    aileron: float = 0
+    elevator: float = 0
+    rudder: float = 0
+
+
+@dataclass
+class ActuatorOutputs:
+    quad: QuadActuators = field(default_factory=QuadActuators)
+    fw: FWActuators = field(default_factory=FWActuators)
+
+
+@dataclass
+class UAVForces:
+    # Aero forces
     lift: float = 0
     drag: float = 0
 
-    # Body frame forces
-    Fx: float = 0
-    Fy: float = 0
-    Fz: float = 0
+    # Body-frame forces
+    fx: float = 0
+    fy: float = 0
+    fz: float = 0
 
-    # Body moments
-    l_moment: float = 0
-    m_moment: float = 0
-    n_moment: float = 0
+    # Moments
+    l: float = 0
+    m: float = 0
+    n: float = 0

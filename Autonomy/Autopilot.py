@@ -3,7 +3,7 @@ import numpy as np
 from Autonomy.Path_planning import WaypointNavigator
 from Autonomy.Controller import ControllerManager
 from Autonomy.Mixer import Mixer
-from Global.simdata import GCSData_class, Actuator_class, UAVState_class, Waypoint_data_class
+from Global.simdata import GCSData, ActuatorOutputs, UAVState, Waypoint
 from Autonomy.FMM import Flight_Mode_manager
 
 class UAVAutopilot:
@@ -11,7 +11,7 @@ class UAVAutopilot:
     Main Autopilot class for computing actuator commands based on flight mode, navigation goals, and current state.
     """
 
-    def __init__(self, GCS_data:GCSData_class, dt:float):
+    def __init__(self, GCS_data:GCSData, dt:float):
         """
         Args:
 
@@ -30,7 +30,7 @@ class UAVAutopilot:
         self.mixer = Mixer()
 
 
-    def run(self, current_state: UAVState_class, GCSdata: GCSData_class):
+    def run(self, current_state: UAVState, GCSdata: GCSData):
         """
         Main funciton which calculated the Actuator outputs for the autopilot
         """

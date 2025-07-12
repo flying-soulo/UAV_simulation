@@ -1,12 +1,12 @@
 import numpy as np
-from Global.simdata import UAVForce_class, UAVState_class
+from Global.simdata import UAVForces, UAVState
 from dataclasses import astuple
 
 class SixDOFDynamics:
     def __init__(self, vehicle_prop):
         self.vp = vehicle_prop
 
-    def compute(self, current_state: UAVState_class, forces_moments: UAVForce_class):
+    def compute(self, current_state: UAVState, forces_moments: UAVForces):
         u, v, w = current_state.x_vel, current_state.y_vel, current_state.z_vel
         p, q, r = current_state.phi_rate, current_state.theta_rate, current_state.psi_rate
 

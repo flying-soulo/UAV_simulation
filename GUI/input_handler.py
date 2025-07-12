@@ -6,12 +6,7 @@ Manages GUI buttons and updates to control structure using dataclasses.
 import logging
 from vpython import *  # type: ignore
 import numpy as np
-from Global.simdata import (
-    GCSData_class,
-    Waypoint_class,
-    Waypoint_data_class,
-    Radio_data_class,
-)
+from Global.simdata import GCSData, Waypoint, RCInput
 
 # === LOGGING CONFIG ===
 DEBUG_TO_CONSOLE = False  # Toggle between console or file logging
@@ -27,13 +22,12 @@ else:
 
 
 class GCSInput:
-    def __init__(self, scene: canvas, waypoint_data: Waypoint_data_class):
+    def __init__(self, scene: canvas, GCS_data: GCSData):
         self.scene = scene
         self.scene.select()
 
-        self.waypoint_data: Waypoint_data_class = waypoint_data
-        self.GCS_data: GCSData_class = GCSData_class()
-        self.radio: Radio_data_class = Radio_data_class()
+        self.GCS_data: GCSData = GCSData()
+        self.radio: RCInput = RCInput()
 
         self.sim_cmd_buttons = {}
         self.AC_cmd_buttons = {}
@@ -48,31 +42,31 @@ class GCSInput:
         if self.GCS_data.mode == "MANUAL ":
             k = evt.key
             if k == "w":
-                self.radio.channel3 += 1
+                self.radio.throttle += 1
             elif k == "s":
-                self.radio.channel3 -= 1
+                self.radio.throttle -= 1
             elif k == "a":
-                self.radio.channel4 -= 1
+                self.radio.yaw -= 1
             elif k == "d":
-                self.radio.channel4 += 1
+                self.radio.yaw += 1
             elif k == "up":
-                self.radio.channel2 += 1
+                self.radio.pitch += 1
             elif k == "down":
-                self.radio.channel2 -= 1
+                self.radio.pitch -= 1
             elif k == "left":
-                self.radio.channel1 -= 1
+                self.radio.roll -= 1
             elif k == "right":
-                self.radio.channel1 += 1
+                self.radio.roll += 1
             elif k == "q":
                 if self.radio.mode_switch == "FW_MANUAL":
                     self.radio.mode_switch = "QD_MANUAL"
                 elif self.radio.mode_switch == "FW_MANUAL":
                     self.radio.mode_switch = "QD_MANUAL"
 
-        self.radio.channel3 = np.clip(self.radio.channel3, -100, 100)
-        self.radio.channel1 = np.clip(self.radio.channel1, -100, 100)
-        self.radio.channel2 = np.clip(self.radio.channel2, -100, 100)
-        self.radio.channel4 = np.clip(self.radio.channel4, -100, 100)
+        self.radio.throttle = np.clip(self.radio.throttle, -100, 100)
+        self.radio.roll = np.clip(self.radio.roll, -100, 100)
+        self.radio.pitch = np.clip(self.radio.pitch, -100, 100)
+        self.radio.yaw = np.clip(self.radio.yaw, -100, 100)
 
     def create_sim_command_inputs(self):
         self.scene.append_to_caption("\n              SIM COMMANDS              \n")
@@ -169,11 +163,11 @@ class GCSInput:
             return
 
         if wp == "home":
-            wp_data = self.GCS_data.waypoint_data.home
+            wp_data = self.GCS_data.mission.home
         else:
             try:
                 idx = int(wp)
-                wp_data = self.GCS_data.waypoint_data.waypoints[idx]
+                wp_data = self.GCS_data.mission.waypoints[idx]
             except (ValueError, IndexError):
                 return  # Invalid input or index out of range
 
@@ -191,7 +185,7 @@ class GCSInput:
             if wp_id is None:
                 raise ValueError("Invalid waypoint index")
 
-            wp = Waypoint_class(
+            wp = Waypoint(
                 x=float(self.waypoint_buttons["x"].text),
                 y=float(self.waypoint_buttons["y"].text),
                 z=float(self.waypoint_buttons["z"].text),
@@ -202,9 +196,9 @@ class GCSInput:
             )
 
             if wp_id == "home":
-                self.waypoint_data.home = wp
+                self.GCS_data.mission.home = wp
             else:
-                self.waypoint_data.waypoints[int(wp_id)] = wp
+                self.GCS_data.mission.waypoints[int(wp_id)] = wp
 
             self.set_wp_button.color = color.green
             logging.info(f"Waypoint '{wp_id}' saved: {wp}")
@@ -231,7 +225,7 @@ class GCSInput:
         self.create_waypoint_inputs()
 
     def run(self):
-        self.GCS_data.radio = self.radio
+        self.GCS_data.rc = self.radio
         return self.GCS_data
 
 
@@ -249,13 +243,13 @@ class GCSInput:
 
 #         logging.info(
 #             f"MODE: {data.mode} | CMD: {data.command} | "
-#             f"T:{data.radio.channel1:.1f} "
-#             f"R:{data.radio.channel4:.1f} "
-#             f"P:{data.radio.channel3:.1f} "
-#             f"Y:{data.radio.channel2:.1f} | "
-#             f"HOME: ({data.waypoint_data.home.x:.1f}, "
-#             f"{data.waypoint_data.home.y:.1f}, "
-#             f"{data.waypoint_data.home.z:.1f})"
+#             f"T:{data.radio.roll:.1f} "
+#             f"R:{data.radio.yaw:.1f} "
+#             f"P:{data.radio.throttle:.1f} "
+#             f"Y:{data.radio.pitch:.1f} | "
+#             f"HOME: ({data.mission_plan.home.x:.1f}, "
+#             f"{data.mission_plan.home.y:.1f}, "
+#             f"{data.mission_plan.home.z:.1f})"
 #         )
 
 

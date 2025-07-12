@@ -2,52 +2,52 @@
 from Autonomy.fw_controller import FixedWingController
 from Autonomy.quad_controller import QuadController
 import numpy as np
-from Global.simdata import Controls_class, UAVState_class, Target_data_struct, controller_flags_class
+from Global.simdata import ControllerFlags, UAVState, TargetSetpoints, ControlOutputs
 
 class ControllerManager:
     def __init__(self, dt):
         self.fw_controller = FixedWingController(dt)
         self.quad_controller = QuadController(dt)
-        self.output : Controls_class = Controls_class()
+        self.output : ControlOutputs = ControlOutputs()
 
-    def run(self, current_state: UAVState_class, target: Target_data_struct, flags: controller_flags_class):
+    def run(self, current_state: UAVState, target: TargetSetpoints, flags: ControllerFlags):
 
         # run controller
-        match(flags.mode.upper()):
+        match(flags.current_mode.upper()):
             case "FW":
-                self.output.FW = self.fw_controller.run(current_state, target.FW, flags)
+                self.output.fw = self.fw_controller.run(current_state, target.fw, flags)
 
-                self.output.Quad.pitch = 0
-                self.output.Quad.roll = 0
-                self.output.Quad.throttle = 0
-                self.output.Quad.yaw = 0
+                self.output.quad.pitch = 0
+                self.output.quad.roll = 0
+                self.output.quad.throttle = 0
+                self.output.quad.yaw = 0
 
             case "QD":
-                self.output.Quad = self.quad_controller.run(current_state, target.Quad)
+                self.output.quad = self.quad_controller.run(current_state, target.quad)
 
-                self.output.FW.aileron = 0
-                self.output.FW.elevator = 0
-                self.output.FW.rudder = 0
-                self.output.FW.throttle = 0
+                self.output.fw.aileron = 0
+                self.output.fw.elevator = 0
+                self.output.fw.rudder = 0
+                self.output.fw.throttle = 0
 
             case "TRANSITION":
-                self.output.Quad.pitch = 0
-                self.output.Quad.roll = 0
-                self.output.Quad.throttle = 0
-                self.output.Quad.yaw = 0
-                self.output.FW.aileron = 0
-                self.output.FW.elevator = 0
-                self.output.FW.rudder = 0
-                self.output.FW.throttle = 0
+                self.output.quad.pitch = 0
+                self.output.quad.roll = 0
+                self.output.quad.throttle = 0
+                self.output.quad.yaw = 0
+                self.output.fw.aileron = 0
+                self.output.fw.elevator = 0
+                self.output.fw.rudder = 0
+                self.output.fw.throttle = 0
 
             case "SHUTDOWN":
-                self.output.Quad.pitch = 0
-                self.output.Quad.roll = 0
-                self.output.Quad.throttle = 0
-                self.output.Quad.yaw = 0
-                self.output.FW.aileron = 0
-                self.output.FW.elevator = 0
-                self.output.FW.rudder = 0
-                self.output.FW.throttle = 0
+                self.output.quad.pitch = 0
+                self.output.quad.roll = 0
+                self.output.quad.throttle = 0
+                self.output.quad.yaw = 0
+                self.output.fw.aileron = 0
+                self.output.fw.elevator = 0
+                self.output.fw.rudder = 0
+                self.output.fw.throttle = 0
 
         return self.output

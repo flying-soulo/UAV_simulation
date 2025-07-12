@@ -1,0 +1,21 @@
+2025-07-12 10:43:27,946 - ERROR - Task exception was never retrieved
+future: <Task finished name='Task-2081' coro=<WSserver.onMessage() done, defined at D:\Abhishek\temp\plant_model\aerovironment\myenv\Lib\site-packages\vpython\no_notebook.py:197> exception=TypeError('None is not a callable object')>
+Traceback (most recent call last):
+  File "D:\Abhishek\temp\plant_model\aerovironment\myenv\Lib\site-packages\vpython\no_notebook.py", line 231, in onMessage
+    await loop.run_in_executor(None, GW.handle_msg, msg)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.1008.0_x64__qbz5n2kfra8p0\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\Abhishek\temp\plant_model\aerovironment\myenv\Lib\site-packages\vpython\vpython.py", line 414, in handle_msg
+    a = signature(obj._bind)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.1008.0_x64__qbz5n2kfra8p0\Lib\inspect.py", line 3349, in signature
+    return Signature.from_callable(obj, follow_wrapped=follow_wrapped,
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                   globals=globals, locals=locals, eval_str=eval_str)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.1008.0_x64__qbz5n2kfra8p0\Lib\inspect.py", line 3072, in from_callable
+    return _signature_from_callable(obj, sigcls=cls,
+                                    follow_wrapper_chains=follow_wrapped,
+                                    globals=globals, locals=locals, eval_str=eval_str)
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.1008.0_x64__qbz5n2kfra8p0\Lib\inspect.py", line 2500, in _signature_from_callable
+    raise TypeError('{!r} is not a callable object'.format(obj))
+TypeError: None is not a callable object
