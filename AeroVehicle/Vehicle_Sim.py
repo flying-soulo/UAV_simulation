@@ -10,7 +10,7 @@ class UAVSimulation:
     def __init__(self, vehicle_prop, dt):
         self.vehicle_prop = vehicle_prop
         self.dt = dt
-        self.min_thrust, self.max_thrust = 0, 110 * 0.3
+        self.min_thrust, self.max_thrust = 0, 110
         D2R = np.pi / 180
         self.min_deflection, self.max_deflection = -30 * D2R, 30 * D2R
 
@@ -25,7 +25,8 @@ class UAVSimulation:
 
     def simulate_one_step(self, current_state: UAVState, control_input: ActuatorOutputs ):
 
-        # Unpack state for clarity
+        self.controls = self.actuators.run(control_input)
+        # Unpack states
         u, v, w = current_state.x_vel, current_state.y_vel, current_state.z_vel
         phi, theta, psi = current_state.phi, current_state.theta, current_state.psi
         p, q, r = current_state.phi_rate, current_state.theta_rate, current_state.psi_rate

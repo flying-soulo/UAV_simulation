@@ -22,11 +22,11 @@ else:
 
 
 class GCSInput:
-    def __init__(self, scene: canvas, GCS_data: GCSData):
+    def __init__(self, scene: canvas, output: GCSData):
         self.scene = scene
         self.scene.select()
 
-        self.GCS_data: GCSData = GCSData()
+        self.output: GCSData = GCSData()
         self.radio: RCInput = RCInput()
 
         self.sim_cmd_buttons = {}
@@ -37,9 +37,20 @@ class GCSInput:
         self.previous_mode: str = "AUTO"
         self.create_controls()
         self.scene.bind("keydown", self.radio_control_input)
+        # GCS data initialization
+        self.output.mission.home = Waypoint(x=1000, y=1000, z=-1000, heading=0, action="reach", mode="Auto", next=0)
+        self.output.mission.waypoints = [
+            Waypoint(x=3000, y=1000, z=-1000, heading=0, action="reach", mode="Auto", next=1),
+            Waypoint(x=3000, y=3000, z=-1000, heading=0, action="reach", mode="Auto", next=2),
+            Waypoint(x=-3000, y=3000, z=-1000, heading=0, action="reach", mode="Auto", next=3),
+            Waypoint(x=-3000, y=-3000, z=-1000, heading=0, action="reach", mode="Auto", next=0)
+        ]
+        self.output.mission.current_index = 0
+        self.output.mission.previous_index = 0
+
 
     def radio_control_input(self, evt: event_return):
-        if self.GCS_data.mode == "MANUAL ":
+        if self.output.mode == "MANUAL ":
             k = evt.key
             if k == "w":
                 self.radio.throttle += 1
@@ -74,7 +85,7 @@ class GCSInput:
             self.sim_cmd_buttons[m] = button(
                 text=m.upper(),
                 bind=lambda _, m=m: (
-                    setattr(self.GCS_data, "sim_command", m),
+                    setattr(self.output, "sim_command", m),
                     self.update_button_colors(m, self.sim_cmd_buttons),
                 ),
             )
@@ -86,7 +97,7 @@ class GCSInput:
             self.AC_cmd_buttons[command] = button(
                 text=command.upper(),
                 bind=lambda _, m=command: (
-                    setattr(self.GCS_data, "sim_command", m),
+                    setattr(self.output, "sim_command", m),
                     self.update_button_colors(m, self.AC_cmd_buttons),
                 ),
             )
@@ -102,7 +113,7 @@ class GCSInput:
             self.mode_buttons[mode] = button(
                 text=mode.upper(),
                 bind=lambda _, m=mode: (
-                    setattr(self.GCS_data, "mode", m),
+                    setattr(self.output, "mode", m),
                     self.update_button_colors(m, self.mode_buttons),
                 ),
             )
@@ -153,7 +164,7 @@ class GCSInput:
         self.scene.append_to_caption("  ")
         self.upload_waypoint_button = button(
             text="Upload waypoints",
-            bind=lambda: setattr(self.GCS_data, "upload_waypoints", True),
+            bind=lambda: setattr(self.output, "upload_waypoints", True),
         )
 
     def show_input_waypoint(self):
@@ -163,11 +174,11 @@ class GCSInput:
             return
 
         if wp == "home":
-            wp_data = self.GCS_data.mission.home
+            wp_data = self.output.mission.home
         else:
             try:
                 idx = int(wp)
-                wp_data = self.GCS_data.mission.waypoints[idx]
+                wp_data = self.output.mission.waypoints[idx]
             except (ValueError, IndexError):
                 return  # Invalid input or index out of range
 
@@ -196,9 +207,9 @@ class GCSInput:
             )
 
             if wp_id == "home":
-                self.GCS_data.mission.home = wp
+                self.output.mission.home = wp
             else:
-                self.GCS_data.mission.waypoints[int(wp_id)] = wp
+                self.output.mission.waypoints[int(wp_id)] = wp
 
             self.set_wp_button.color = color.green
             logging.info(f"Waypoint '{wp_id}' saved: {wp}")
@@ -225,8 +236,9 @@ class GCSInput:
         self.create_waypoint_inputs()
 
     def run(self):
-        self.GCS_data.rc = self.radio
-        return self.GCS_data
+        self.output.rc = self.radio
+
+        return self.output
 
 
 # def main():

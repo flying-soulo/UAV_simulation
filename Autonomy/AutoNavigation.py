@@ -22,7 +22,7 @@ class AutoNavigation:
         self.gcs_data = gcs_data
 
         # Get target waypoint from planner
-        target_wp = self.navigator.update(state, self.gcs_data)
+        mission_track = self.navigator.update(state, self.gcs_data)
 
         # ----- Safety: if disarmed, hold everything -----
         # if not armed:
@@ -64,5 +64,5 @@ class AutoNavigation:
 
         # ----- Mission Flight (FW mode) -----
         self.flags.current_mode = "FW"
-        targets.fw = self.guidance.run(state, target_wp)
+        targets.fw = self.guidance.run(state, mission_track)
         return targets, self.flags

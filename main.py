@@ -55,17 +55,6 @@ class UAVSimulator:
         # Reset only the backend simulation components
         self.GCS_data = GCSData()
 
-        # GCS data initialization
-        self.GCS_data.mission.home = Waypoint(x=1000, y=1000, z=-1000, heading=0, action="reach", mode="Auto", next=0)
-        self.GCS_data.mission.waypoints = [
-            Waypoint(x=3000, y=1000, z=-1000, heading=0, action="reach", mode="Auto", next=1),
-            Waypoint(x=3000, y=3000, z=-1000, heading=0, action="reach", mode="Auto", next=2),
-            Waypoint(x=-3000, y=3000, z=-1000, heading=0, action="reach", mode="Auto", next=3),
-            Waypoint(x=-3000, y=-3000, z=-1000, heading=0, action="reach", mode="Auto", next=0)
-        ]
-        self.GCS_data.mission.current_index = 0
-        self.GCS_data.mission.previous_index = 0
-
         self.forces_moments = UAVForces()
         self.Actuators = ActuatorOutputs()
         self.current_state = UAVState()

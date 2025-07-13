@@ -25,7 +25,8 @@ class UAVinterface:
         # Initialize UAV Renderer with manual control
         self.GCS = GCSInput(self.scene, GCS_data)
         self.visual = UAVRenderer(scene = self.scene, manual_control = manual_control)
-        self.output : GCSData
+        self.output : GCSData = GCSData()
+
 
     def run(self):
         self.output = self.GCS.run()

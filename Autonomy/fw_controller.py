@@ -6,7 +6,7 @@ import Global.configs as configs
 
 
 class FixedWingController:
-    def __init__(self, dt, TECS_control: bool = True):
+    def __init__(self, dt, TECS_control: bool = False):
         self.dt = dt
         self.TECS_control = TECS_control
         self.target: FWTarget = FWTarget()

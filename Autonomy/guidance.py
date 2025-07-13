@@ -31,5 +31,5 @@ class FW_guidance:
 
         g = 9.81
         roll = np.arctan2(a_lat, g)
-
-        return FWTarget(roll=roll, altitude=curr.z, airspeed=self.default_airspeed)
+        output  = FWTarget(roll=roll, altitude=curr.z, airspeed=self.default_airspeed)
+        return output
