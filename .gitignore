@@ -5,3 +5,5 @@ myenv/
 flask_GUI
 *.csv
 logger/logs
+Doxyfile
+docs
